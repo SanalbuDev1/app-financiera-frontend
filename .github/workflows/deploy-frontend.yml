@@ -27,6 +27,9 @@ jobs:
       - name: Build production
         run: npm run build -- --configuration production
 
+      - name: Prepare static output
+        run: mv dist/app-financiera/browser/index.csr.html dist/app-financiera/browser/index.html
+
       - name: Deploy to Azure Static Web Apps
         uses: Azure/static-web-apps-deploy@v1
         with:
