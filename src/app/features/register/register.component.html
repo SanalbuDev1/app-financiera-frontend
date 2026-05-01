@@ -1,0 +1,164 @@
+<div class="register-container">
+  <div class="register-card">
+
+    <div class="register-header">
+      <div class="logo">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M12 2L2 7l10 5 10-5-10-5z"/>
+          <path d="M2 17l10 5 10-5"/>
+          <path d="M2 12l10 5 10-5"/>
+        </svg>
+      </div>
+      <h1 class="app-title">Crear cuenta</h1>
+      <p class="app-subtitle">Completa los datos para registrarte</p>
+    </div>
+
+    <form [formGroup]="registerForm" (ngSubmit)="onSubmit()" class="register-form" novalidate>
+
+      @if (errorMessage()) {
+        <div class="alert alert-error" role="alert">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+            <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clip-rule="evenodd"/>
+          </svg>
+          {{ errorMessage() }}
+        </div>
+      }
+
+      <!-- Nombre -->
+      <div class="form-field">
+        <label for="name" class="form-label">Nombre completo</label>
+        <input
+          id="name"
+          type="text"
+          formControlName="name"
+          class="form-input"
+          [class.is-invalid]="nameControl.invalid && nameControl.touched"
+          placeholder="Juan Pérez"
+          autocomplete="name"
+        />
+        @if (nameControl.invalid && nameControl.touched) {
+          <span class="field-error">
+            @if (nameControl.errors?.['required']) { El nombre es obligatorio }
+            @if (nameControl.errors?.['minlength']) { Mínimo 2 caracteres }
+          </span>
+        }
+      </div>
+
+      <!-- Email -->
+      <div class="form-field">
+        <label for="email" class="form-label">Correo electrónico</label>
+        <input
+          id="email"
+          type="email"
+          formControlName="email"
+          class="form-input"
+          [class.is-invalid]="emailControl.invalid && emailControl.touched"
+          placeholder="correo@empresa.com"
+          autocomplete="email"
+        />
+        @if (emailControl.invalid && emailControl.touched) {
+          <span class="field-error">
+            @if (emailControl.errors?.['required']) { El correo es obligatorio }
+            @if (emailControl.errors?.['email']) { Ingresa un correo válido }
+          </span>
+        }
+      </div>
+
+      <!-- Contraseña -->
+      <div class="form-field">
+        <label for="password" class="form-label">Contraseña</label>
+        <div class="input-wrapper">
+          <input
+            id="password"
+            [type]="showPassword() ? 'text' : 'password'"
+            formControlName="password"
+            class="form-input"
+            [class.is-invalid]="passwordControl.invalid && passwordControl.touched"
+            placeholder="••••••••"
+            autocomplete="new-password"
+          />
+          <button type="button" class="toggle-password" (click)="togglePassword()"
+            [attr.aria-label]="showPassword() ? 'Ocultar' : 'Mostrar'">
+            @if (showPassword()) {
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M17.94 17.94A10.07 10.07 0 0112 20c-7 0-11-8-11-8a18.45 18.45 0 015.06-5.94M9.9 4.24A9.12 9.12 0 0112 4c7 0 11 8 11 8a18.5 18.5 0 01-2.16 3.19m-6.72-1.07a3 3 0 11-4.24-4.24"/>
+                <line x1="1" y1="1" x2="23" y2="23"/>
+              </svg>
+            } @else {
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+                <circle cx="12" cy="12" r="3"/>
+              </svg>
+            }
+          </button>
+        </div>
+        @if (passwordControl.invalid && passwordControl.touched) {
+          <span class="field-error">
+            @if (passwordControl.errors?.['required']) { La contraseña es obligatoria }
+            @if (passwordControl.errors?.['minlength']) { Mínimo 6 caracteres }
+          </span>
+        }
+      </div>
+
+      <!-- Confirmar contraseña -->
+      <div class="form-field">
+        <label for="confirmPassword" class="form-label">Confirmar contraseña</label>
+        <div class="input-wrapper">
+          <input
+            id="confirmPassword"
+            [type]="showConfirmPassword() ? 'text' : 'password'"
+            formControlName="confirmPassword"
+            class="form-input"
+            [class.is-invalid]="confirmPasswordControl.touched && (confirmPasswordControl.errors?.['required'] || registerForm.errors?.['passwordMismatch'])"
+            placeholder="••••••••"
+            autocomplete="new-password"
+          />
+          <button type="button" class="toggle-password" (click)="toggleConfirmPassword()"
+            [attr.aria-label]="showConfirmPassword() ? 'Ocultar' : 'Mostrar'">
+            @if (showConfirmPassword()) {
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M17.94 17.94A10.07 10.07 0 0112 20c-7 0-11-8-11-8a18.45 18.45 0 015.06-5.94M9.9 4.24A9.12 9.12 0 0112 4c7 0 11 8 11 8a18.5 18.5 0 01-2.16 3.19m-6.72-1.07a3 3 0 11-4.24-4.24"/>
+                <line x1="1" y1="1" x2="23" y2="23"/>
+              </svg>
+            } @else {
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+                <circle cx="12" cy="12" r="3"/>
+              </svg>
+            }
+          </button>
+        </div>
+        @if (confirmPasswordControl.touched) {
+          @if (confirmPasswordControl.errors?.['required']) {
+            <span class="field-error">Confirma tu contraseña</span>
+          } @else if (registerForm.errors?.['passwordMismatch']) {
+            <span class="field-error">Las contraseñas no coinciden</span>
+          }
+        }
+      </div>
+
+      <div class="role-badge">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+          <path fill-rule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clip-rule="evenodd"/>
+        </svg>
+        Tu cuenta tendrá rol <strong>Usuario</strong> por defecto
+      </div>
+
+      <button type="submit" class="btn-submit" [disabled]="isLoading()">
+        @if (isLoading()) {
+          <span class="spinner" aria-hidden="true"></span>
+          Creando cuenta...
+        } @else {
+          Crear cuenta
+        }
+      </button>
+
+    </form>
+
+    <div class="login-link">
+      ¿Ya tienes cuenta?
+      <a routerLink="/login">Inicia sesión</a>
+    </div>
+
+  </div>
+</div>

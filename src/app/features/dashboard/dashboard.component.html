@@ -1,0 +1,358 @@
+<div class="dashboard-shell" [class.sidebar-open]="isSidebarOpen()" [class.dark]="isDarkTheme()">
+
+  <!-- OVERLAY móvil -->
+  <div class="sidebar-overlay" (click)="closeSidebar()"></div>
+
+  <!-- SIDEBAR -->
+  <nav class="sidebar">
+    <div class="sidebar__brand">
+      <img class="sidebar__brand-logo" src="logo.svg" alt="App Financiera logo" width="36" height="36"/>
+      <span class="sidebar__brand-name">
+        <span class="sidebar__brand-app">App</span>
+        <span class="sidebar__brand-fin">Financiera</span>
+      </span>
+    </div>
+    <ul class="sidebar__nav">
+      @for (item of navItems; track item.label) {
+        <li class="sidebar__nav-item" [class.sidebar__nav-item--active]="item.active" (click)="item.action()">
+          <span class="sidebar__nav-icon">{{ item.icon }}</span>
+          <span class="sidebar__nav-label">{{ item.label }}</span>
+        </li>
+      }
+    </ul>
+    <div class="sidebar__footer">
+      <button class="sidebar__theme-btn" (click)="toggleTheme()">
+        {{ isDarkTheme() ? '☀️ Tema claro' : '🌙 Tema oscuro' }}
+      </button>
+      <button class="sidebar__logout-btn" (click)="onLogout()">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
+          <polyline points="16 17 21 12 16 7"/>
+          <line x1="21" y1="12" x2="9" y2="12"/>
+        </svg>
+        <span>Cerrar sesión</span>
+      </button>
+    </div>
+  </nav>
+
+  <!-- CONTENIDO PRINCIPAL -->
+  <div class="dashboard">
+
+    <!-- TOPBAR -->
+    <header class="topbar">
+      <!-- Botón hamburguesa (solo móvil) -->
+      <button class="topbar__menu-btn" (click)="toggleSidebar()" aria-label="Abrir menú">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <line x1="3" y1="6" x2="21" y2="6"/>
+          <line x1="3" y1="12" x2="21" y2="12"/>
+          <line x1="3" y1="18" x2="21" y2="18"/>
+        </svg>
+      </button>
+      <div class="topbar__greeting">
+        <span class="topbar__greeting-label">Hola,</span>
+        <span class="topbar__greeting-name">{{ userName()?.name ?? 'Usuario' }} 👋</span>
+      </div>
+      <button class="topbar__logout" (click)="onLogout()">
+        <span>Salir</span>
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
+          <polyline points="16 17 21 12 16 7"/>
+          <line x1="21" y1="12" x2="9" y2="12"/>
+        </svg>
+      </button>
+    </header>
+
+    <!-- SELECTOR DE MES -->
+    <section class="month-selector">
+      <!-- Grid desktop/tablet -->
+      <div class="month-selector__grid">
+        @for (btn of monthButtons(); track btn.index) {
+          <button
+            class="month-selector__btn"
+            [class.month-selector__btn--active]="btn.index === selectedMonth()"
+            (click)="selectMonth(btn.index)">
+            <span class="month-selector__full">{{ btn.label }}</span>
+            <span class="month-selector__short">{{ btn.short }}</span>
+          </button>
+        }
+      </div>
+      <!-- Stepper móvil -->
+      <div class="month-selector__stepper">
+        <button
+          class="month-selector__arrow"
+          [disabled]="selectedMonth() === 0"
+          (click)="prevMonth()">
+          ◀
+        </button>
+        <span class="month-selector__current">
+          {{ monthButtons()[selectedMonth()].label }}
+        </span>
+        <button
+          class="month-selector__arrow"
+          [disabled]="selectedMonth() === 11"
+          (click)="nextMonth()">
+          ▶
+        </button>
+      </div>
+    </section>
+
+    <!-- CARDS RESUMEN -->
+    <section class="summary-cards">
+      <div class="card card--balance">
+        <span class="card__icon">💎</span>
+        <div class="card__content">
+          <span class="card__label">Balance total</span>
+          <span class="card__value card__value--large">$ {{ summary().totalBalance | number:'1.2-2' }}</span>
+        </div>
+      </div>
+      <div class="card card--income">
+        <span class="card__icon">📈</span>
+        <div class="card__content">
+          <span class="card__label">Ingresos del mes</span>
+          <span class="card__value card__value--green">+ $ {{ summary().monthlyIncome | number:'1.2-2' }}</span>
+        </div>
+      </div>
+      <div class="card card--expense">
+        <span class="card__icon">📉</span>
+        <div class="card__content">
+          <span class="card__label">Gastos del mes</span>
+          <span class="card__value card__value--red">- $ {{ summary().monthlyExpenses | number:'1.2-2' }}</span>
+        </div>
+      </div>
+      <div class="card card--savings">
+        <span class="card__icon">🏦</span>
+        <div class="card__content">
+          <span class="card__label">Ahorro del mes</span>
+          <span class="card__value card__value--blue">$ {{ summary().monthlySavings | number:'1.2-2' }}</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- FILA MEDIA: Gráfico barras + Meta ahorro -->
+    <section class="mid-row">
+
+      <!-- Gráfico barras: ingresos vs gastos -->
+      <div class="card chart-card">
+        <h3 class="card__title">Ingresos vs Gastos</h3>
+        <div class="bar-chart">
+          @for (item of monthlyChart(); track $index) {
+            <div class="bar-group" [class.bar-group--selected]="item.isSelected">
+              <div class="bar-group__bars">
+                <div
+                  class="bar bar--income"
+                  [style.height.%]="(item.income / chartMax) * 100">
+                </div>
+                <div
+                  class="bar bar--expense"
+                  [style.height.%]="(item.expense / chartMax) * 100">
+                </div>
+              </div>
+              <span class="bar-group__label">{{ item.month }}</span>
+            </div>
+          }
+        </div>
+        <div class="chart-legend">
+          <span class="legend-item legend-item--income">Ingresos</span>
+          <span class="legend-item legend-item--expense">Gastos</span>
+        </div>
+      </div>
+
+      <!-- Donut chart: distribución de gastos del mes -->
+      <div class="card donut-card">
+        <h3 class="card__title">Gastos del mes</h3>
+        @if (donutSegments().length > 0) {
+          <div class="donut-layout">
+            <div class="donut-circle">
+              <svg viewBox="0 0 100 100" class="donut-svg">
+                <circle cx="50" cy="50" r="40" class="donut-track"/>
+                @for (seg of donutSegments(); track seg.label) {
+                  <path
+                    [attr.d]="seg.path"
+                    fill="none"
+                    [attr.stroke]="seg.color"
+                    stroke-width="10"
+                    stroke-linecap="butt"/>
+                }
+              </svg>
+              <div class="donut-center">
+                <span class="donut-center__amount">$ {{ monthlyExpenseTotal() | number:'1.0-0' }}</span>
+                <span class="donut-center__label">total</span>
+              </div>
+            </div>
+            <ul class="donut-legend">
+              @for (seg of donutSegments(); track seg.label) {
+                <li class="donut-legend__item">
+                  <span class="donut-legend__dot" [style.background]="seg.color"></span>
+                  <span class="donut-legend__icon">{{ seg.icon }}</span>
+                  <span class="donut-legend__label">{{ seg.label }}</span>
+                  <span class="donut-legend__pct">{{ seg.percent }}%</span>
+                </li>
+              }
+            </ul>
+          </div>
+        } @else {
+          <div class="donut-empty">
+            <span class="donut-empty__icon">📊</span>
+            <span class="donut-empty__text">No hay gastos registrados este mes</span>
+          </div>
+        }
+      </div>
+
+    </section>
+
+    <!-- FILA INFERIOR: Transacciones + Presupuestos -->
+    <section class="bottom-row">
+
+      <!-- Transacciones con filtro y paginación -->
+      <div class="card transactions-card">
+        <div class="transactions-header">
+          <h3 class="card__title">Transacciones</h3>
+          <span class="transactions-header__count">{{ totalRecords() }} registros</span>
+        </div>
+
+        <!-- Filtro de fechas -->
+        <div class="date-filter">
+          <div class="date-filter__field">
+            <label class="date-filter__label">Desde</label>
+            <input
+              class="date-filter__input"
+              type="date"
+              [ngModel]="filterDateFrom()"
+              (ngModelChange)="filterDateFrom.set($event); onFilterChange()"/>
+          </div>
+          <div class="date-filter__field">
+            <label class="date-filter__label">Hasta</label>
+            <input
+              class="date-filter__input"
+              type="date"
+              [ngModel]="filterDateTo()"
+              (ngModelChange)="filterDateTo.set($event); onFilterChange()"/>
+          </div>
+          @if (filterDateFrom() || filterDateTo()) {
+            <button class="date-filter__clear" (click)="clearDateFilter()">✕ Limpiar</button>
+          }
+        </div>
+
+        <!-- Lista -->
+        <ul class="transaction-list">
+          @for (tx of paginatedTransactions(); track tx.id) {
+            <li class="transaction-item">
+              <span class="transaction-item__icon">{{ getCategoryIcon(tx.category) }}</span>
+              <div class="transaction-item__info">
+                <span class="transaction-item__desc">{{ tx.description }}</span>
+                <span class="transaction-item__date">{{ tx.date | date:'dd MMM' }}</span>
+              </div>
+              <span
+                class="transaction-item__amount"
+                [class.transaction-item__amount--income]="tx.type === 'income'"
+                [class.transaction-item__amount--expense]="tx.type === 'expense'">
+                {{ tx.type === 'income' ? '+' : '-' }} $ {{ tx.amount | number:'1.0-0' }}
+              </span>
+              <div class="transaction-item__actions">
+                <button class="transaction-item__btn transaction-item__btn--edit" (click)="onEditTransaction(tx)" aria-label="Editar">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+                    <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+                  </svg>
+                </button>
+                <button class="transaction-item__btn transaction-item__btn--delete" (click)="onDeleteTransaction(tx.id)" aria-label="Eliminar">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <polyline points="3 6 5 6 21 6"/>
+                    <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/>
+                    <path d="M10 11v6"/><path d="M14 11v6"/>
+                    <path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/>
+                  </svg>
+                </button>
+              </div>
+            </li>
+          } @empty {
+            <li class="transaction-list__empty">No hay transacciones en este rango</li>
+          }
+        </ul>
+
+        <!-- Paginación -->
+        @if (txTotalPages() > 1) {
+          <div class="pagination">
+            <button
+              class="pagination__btn"
+              [disabled]="txPage() === 1"
+              (click)="goToPage(txPage() - 1)">
+              ‹
+            </button>
+            @for (p of [].constructor(txTotalPages()); track $index) {
+              <button
+                class="pagination__btn"
+                [class.pagination__btn--active]="txPage() === $index + 1"
+                (click)="goToPage($index + 1)">
+                {{ $index + 1 }}
+              </button>
+            }
+            <button
+              class="pagination__btn"
+              [disabled]="txPage() === txTotalPages()"
+              (click)="goToPage(txPage() + 1)">
+              ›
+            </button>
+          </div>
+        }
+      </div>
+
+      <!-- Top categorías de gasto -->
+      <div class="card categories-card">
+        <h3 class="card__title">Gastos por categoría</h3>
+        <span class="card__subtitle">Este mes</span>
+        <ul class="category-list">
+          @for (cat of topCategories(); track cat.category) {
+            <li class="category-item">
+              <span class="category-item__icon">{{ cat.icon }}</span>
+              <div class="category-item__info">
+                <div class="category-item__header">
+                  <span class="category-item__label">{{ cat.label }}</span>
+                  <span class="category-item__amount">$ {{ cat.total | number:'1.0-0' }}</span>
+                </div>
+                <div class="category-item__track">
+                  <div
+                    class="category-item__bar"
+                    [style.width.%]="getCategoryPercent(cat.total)">
+                  </div>
+                </div>
+              </div>
+              <span class="category-item__pct">{{ getCategoryPercent(cat.total) }}%</span>
+            </li>
+          } @empty {
+            <li class="category-list__empty">No hay gastos este mes</li>
+          }
+        </ul>
+      </div>
+
+    </section>
+
+    <!-- FAB -->
+    <button class="fab" (click)="onAddTransaction()" aria-label="Agregar transacción">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+        <line x1="12" y1="5" x2="12" y2="19"/>
+        <line x1="5" y1="12" x2="19" y2="12"/>
+      </svg>
+    </button>
+
+  </div><!-- /dashboard -->
+
+  <!-- MODAL INGRESOS -->
+  @if (isIncomeModalOpen()) {
+    <app-income-modal
+      [transaction]="editingTransaction()"
+      (saved)="onIncomeSaved($event)"
+      (closed)="onIncomeModalClosed()">
+    </app-income-modal>
+  }
+
+  <!-- MODAL GASTOS -->
+  @if (isExpenseModalOpen()) {
+    <app-expense-modal
+      [transaction]="editingTransaction()"
+      (saved)="onExpenseSaved($event)"
+      (closed)="onExpenseModalClosed()">
+    </app-expense-modal>
+  }
+
+</div><!-- /dashboard-shell -->

@@ -42,3 +42,31 @@ __screenshots__/
 # System files
 .DS_Store
 Thumbs.db
+desktop.ini
+
+# Environment & secrets
+.env
+.env.*
+!.env.example
+src/environments/environment.local.ts
+
+# Angular SSR / build artifacts
+/dist
+/.angular
+/out-tsc
+
+# Logs
+*.log
+logs/
+
+# Test coverage
+/coverage
+
+# Editor debug / Copilot logs
+.vscode/chrome-extensions/
+c:\Users\*\AppData\**
+
+# OS temp files
+*.tmp
+*.bak
+*.swp
