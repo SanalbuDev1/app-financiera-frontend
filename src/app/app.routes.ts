@@ -21,6 +21,12 @@ export const routes: Routes = [
       import('./features/dashboard/dashboard.routes').then((m) => m.dashboardRoutes),
   },
   {
+    path: 'debts',
+    canActivate: [authGuard],
+    loadChildren: () =>
+      import('./features/debts/debts.routes').then((m) => m.debtsRoutes),
+  },
+  {
     path: 'admin',
     canActivate: [authGuard, roleGuard(UserRole.ADMIN)],
     loadComponent: () =>

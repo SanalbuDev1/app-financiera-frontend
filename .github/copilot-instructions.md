@@ -5,10 +5,12 @@
 - **Angular 21** — standalone components, signals, computed(), SSR habilitado
 - **Estilos** — SCSS puro con CSS custom properties (temas claro/oscuro), sin librerías UI externas
 - **Auth** — JWT propio (NO Azure AD). Persistencia en `localStorage` (SSR-safe)
-- **Backend** — Java Spring Boot + WebFlux en `http://localhost:9000`
+- **Backend** — Java Spring Boot + WebFlux en `http://localhost:9000` (dev) / Azure Container Apps (prod)
 - **Adaptador activo** — `JavaAuthAdapter` (swap a `MockAuthAdapter` cambiando `useClass` en `app.config.ts`)
 - **PWA** — `@angular/service-worker` habilitado en producción
 - **Roles** — `ADMIN` | `USER`
+- **Deploy** — Azure Static Web Apps (CSR) + GitHub Actions CI/CD
+- **Repo** — `SanalbuDev1/app-financiera-frontend` (rama `master`)
 
 ---
 
@@ -57,34 +59,63 @@ src/app/
 │   │       └── guards/
 │   │           ├── auth.guard.ts          CanActivateFn → redirige /login si !isAuthenticated
 │   │           └── role.guard.ts          roleGuard(role: UserRole): CanActivateFn
-│   └── finances/
+│   ├── finances/
+│   │   ├── domain/
+│   │   │   ├── models/
+│   │   │   │   ├── transaction.model.ts   Transaction, TransactionType, TransactionCategory,
+│   │   │   │   │                          CATEGORY_ICONS, getCategoryIcon()
+│   │   │   │   │                          ⚠ icon NO se guarda en BD, se deriva de category
+│   │   │   │   ├── summary.model.ts       FinancialSummary
+│   │   │   │   └── budget.model.ts        Budget
+│   │   │   └── ports/
+│   │   │       └── transaction.port.ts    TransactionPort, TransactionFilter,
+│   │   │                                  PaginatedResponse<T>, CreateTransactionDto, UpdateTransactionDto
+│   │   │                                  Métodos: getAll(), getAllNoPagination(), getSummary(), create(), update(), delete()
+│   │   ├── application/
+│   │   │   ├── services/
+│   │   │   │   └── transaction-state.service.ts  providedIn: 'root'
+│   │   │   │                              signals: transactions, totalElements, totalPages,
+│   │   │   │                              currentPage, summary, loading, error
+│   │   │   │                              computed: hasData
+│   │   │   └── use-cases/
+│   │   │       ├── list-transactions.use-case.ts    @Injectable() — provisto en dashboard.routes.ts
+│   │   │       ├── create-transaction.use-case.ts   @Injectable() — provisto en dashboard.routes.ts
+│   │   │       ├── update-transaction.use-case.ts   @Injectable() — provisto en dashboard.routes.ts
+│   │   │       ├── delete-transaction.use-case.ts   @Injectable() — provisto en dashboard.routes.ts
+│   │   │       └── get-summary.use-case.ts          @Injectable() — provisto en dashboard.routes.ts
+│   │   └── infrastructure/
+│   │       ├── tokens/
+│   │       │   └── transaction.token.ts   InjectionToken<TransactionPort>('TRANSACTION_PORT')
+│   │       └── adapters/
+│   │           ├── mock-transaction.adapter.ts  implements TransactionPort (32 tx mock, delay 400ms)
+│   │           └── java-transaction.adapter.ts  implements TransactionPort (HttpClient → /api/transactions)
+│   └── debts/
 │       ├── domain/
 │       │   ├── models/
-│       │   │   ├── transaction.model.ts   Transaction, TransactionType, TransactionCategory,\n│       │   │   │                          CATEGORY_ICONS, getCategoryIcon()\n│       │   │   │                          ⚠ icon NO se guarda en BD, se deriva de category
-│       │   │   ├── summary.model.ts       FinancialSummary
-│       │   │   └── budget.model.ts        Budget
+│       │   │   └── debt.model.ts          Debt, DebtScheduleItem, DebtPayment, DebtSummary, DebtDetail
+│       │   │                              CreateDebtRequest, UpdateDebtRequest, RegisterPaymentRequest
+│       │   │                              DEBT_TYPES[], DEBT_FREQUENCIES[], getDebtTypeIcon(), calculateInstallment()
 │       │   └── ports/
-│       │       └── transaction.port.ts    TransactionPort, TransactionFilter,
-│       │                                  PaginatedResponse<T>, CreateTransactionDto, UpdateTransactionDto
-│       │                                  Métodos: getAll(), getAllNoPagination(), getSummary(), create(), update(), delete()
+│       │       └── debt.port.ts           DebtPort: getAll(), getDetail(), getSummary(), create(), update(), delete(),
+│       │                                  registerPayment(), getSchedule()
 │       ├── application/
 │       │   ├── services/
-│       │   │   └── transaction-state.service.ts  providedIn: 'root'
-│       │   │                              signals: transactions, totalElements, totalPages,
-│       │   │                              currentPage, summary, loading, error
+│       │   │   └── debt-state.service.ts  providedIn: 'root'
+│       │   │                              signals: debts, summary, currentDetail, loading, error
 │       │   │                              computed: hasData
 │       │   └── use-cases/
-│       │       ├── list-transactions.use-case.ts    @Injectable() — provisto en dashboard.routes.ts
-│       │       ├── create-transaction.use-case.ts   @Injectable() — provisto en dashboard.routes.ts
-│       │       ├── update-transaction.use-case.ts   @Injectable() — provisto en dashboard.routes.ts
-│       │       ├── delete-transaction.use-case.ts   @Injectable() — provisto en dashboard.routes.ts
-│       │       └── get-summary.use-case.ts          @Injectable() — provisto en dashboard.routes.ts
+│       │       ├── list-debts.use-case.ts           @Injectable() — provisto en debts.routes.ts
+│       │       ├── get-debt-detail.use-case.ts      @Injectable() — provisto en debts.routes.ts
+│       │       ├── get-debt-summary.use-case.ts     @Injectable() — provisto en debts.routes.ts
+│       │       ├── create-debt.use-case.ts          @Injectable() — provisto en debts.routes.ts
+│       │       ├── update-debt.use-case.ts          @Injectable() — provisto en debts.routes.ts
+│       │       ├── delete-debt.use-case.ts          @Injectable() — provisto en debts.routes.ts
+│       │       └── register-payment.use-case.ts     @Injectable() — provisto en debts.routes.ts
 │       └── infrastructure/
 │           ├── tokens/
-│           │   └── transaction.token.ts   InjectionToken<TransactionPort>('TRANSACTION_PORT')
+│           │   └── debt.token.ts          InjectionToken<DebtPort>('DEBT_PORT')
 │           └── adapters/
-│               ├── mock-transaction.adapter.ts  implements TransactionPort (32 tx mock, delay 400ms)
-│               └── java-transaction.adapter.ts  implements TransactionPort (HttpClient → /api/transactions)
+│               └── java-debt.adapter.ts   implements DebtPort (HttpClient → /api/debts)
 ├── features/
 │   ├── login/
 │   │   ├── login.component.ts             Reactive forms, signals, RouterLink
@@ -109,14 +140,45 @@ src/app/
 │   │       ├── expense-modal.component.ts Modal de gasto/edición (@Input transaction, ReactiveFormsModule)
 │   │       ├── expense-modal.component.html
 │   │       └── expense-modal.component.scss
+│   ├── debts/
+│   │   ├── debts-shell.component.ts       Shell con sidebar + router-outlet (tema claro/oscuro, nav items)
+│   │   ├── debts-shell.component.html
+│   │   ├── debts-shell.component.scss     CSS custom properties (misma paleta que dashboard)
+│   │   ├── debts.routes.ts               debtsRoutes — shell con children: list + detail
+│   │   ├── debt-list/
+│   │   │   ├── debt-list.component.ts     Lista de deudas: summary cards, filtros, grid de tarjetas, FAB
+│   │   │   ├── debt-list.component.html
+│   │   │   └── debt-list.component.scss
+│   │   ├── debt-detail/
+│   │   │   ├── debt-detail.component.ts   Detalle: hero card, tabla amortización, edición inline, confirmación eliminar
+│   │   │   ├── debt-detail.component.html
+│   │   │   └── debt-detail.component.scss
+│   │   ├── create-debt-modal/
+│   │   │   ├── create-debt-modal.component.ts  10 campos + preview cuota en tiempo real (fórmula francesa)
+│   │   │   ├── create-debt-modal.component.html
+│   │   │   └── create-debt-modal.component.scss
+│   │   └── register-payment-modal/
+│   │       ├── register-payment-modal.component.ts  Regular/Extra, @Input debtId, nextInstallment
+│   │       ├── register-payment-modal.component.html
+│   │       └── register-payment-modal.component.scss
 │   └── admin/
 │       └── admin.component.ts             STUB — pendiente desarrollar
 ├── app.routes.ts
 ├── app.config.ts
 ├── app.config.server.ts
-├── app.routes.server.ts
+├── app.routes.server.ts                    RenderMode.Client (CSR para Azure SWA)
 ├── app.html                               Solo contiene: <router-outlet />
 └── app.ts
+
+src/environments/
+├── environment.ts                         apiUrl: http://localhost:9000 (dev)
+└── environment.prod.ts                    apiUrl: https://finanzas-app.wittywave-bcfc6077.eastus.azurecontainerapps.io (prod)
+
+public/
+└── staticwebapp.config.json               SPA fallback + security headers
+
+.github/workflows/
+└── deploy-frontend.yml                    CI/CD → Azure Static Web Apps
 ```
 
 ---
@@ -127,6 +189,8 @@ src/app/
 /login      → loginRoutes            (loadChildren, público)
 /register   → registerRoutes         (loadChildren, público)
 /dashboard  → dashboardRoutes        (loadChildren, canActivate: [authGuard])
+/debts      → debtsRoutes            (loadChildren, canActivate: [authGuard])  shell + children
+/debts/:id  → DebtDetailComponent    (child de debtsRoutes)
 /admin      → AdminComponent         (loadComponent, canActivate: [authGuard])  ← pendiente: agregar roleGuard
 ''          → redirectTo: 'login'
 '**'        → redirectTo: 'login'
@@ -144,6 +208,7 @@ providers: [
   provideHttpClient(withFetch()),
   { provide: AUTH_PORT, useClass: JavaAuthAdapter },                  // swap a MockAuthAdapter para dev sin backend
   { provide: TRANSACTION_PORT, useClass: JavaTransactionAdapter },    // swap a MockTransactionAdapter para dev sin backend
+  { provide: DEBT_PORT, useClass: JavaDebtAdapter },                  // adaptador de deudas
   provideServiceWorker('ngsw-worker.js', {
     enabled: !isDevMode(),
     registrationStrategy: 'registerWhenStable:30000',
@@ -404,14 +469,96 @@ CREATE INDEX IF NOT EXISTS idx_tx_user_date ON transactions (user_id, transactio
 CREATE INDEX IF NOT EXISTS idx_tx_type ON transactions (type);
 ```
 
+### Deudas
+```
+GET  /api/debts                      200: Debt[]
+GET  /api/debts?status=active        200: Debt[] (filtrado)
+GET  /api/debts/summary              200: DebtSummary
+GET  /api/debts/{id}                 200: DebtDetail { debt, schedule[] }
+POST /api/debts                      body: CreateDebtRequest → 201: Debt
+PUT  /api/debts/{id}                 body: { creditor, description, notes? } → 200: Debt
+DELETE /api/debts/{id}               204
+
+POST /api/debts/{id}/payments        body: RegisterPaymentRequest → 201: DebtPayment
+GET  /api/debts/{id}/schedule        200: DebtScheduleItem[]
+```
+
+#### Tipos válidos para deudas
+- **`debtTypeId`**: `debt-type-credit-card`, `debt-type-bank-loan`, `debt-type-vehicle`, `debt-type-mortgage`, `debt-type-informal`, `debt-type-other`
+- **`frequencyId`**: `freq-monthly`, `freq-biweekly`
+- **`interestRateType`**: `monthly`, `annual`
+- **`status`**: `active`, `paid_off`, `defaulted`
+- **`paymentType`**: `regular`, `extra`
+- **`extraPaymentStrategy`**: `reduce_installment`, `reduce_term`
+- **Nota**: Para pagos `regular`, el backend ignora `totalAmount` y usa el monto del cronograma; enviar igual para pasar `@NotNull`.
+
+---
+
+## Despliegue — Azure Static Web Apps
+
+### URLs
+
+| Entorno | URL |
+|---|---|
+| **Frontend (prod)** | `https://jolly-cliff-02e08840f.7.azurestaticapps.net` |
+| **Backend (prod)** | `https://finanzas-app.wittywave-bcfc6077.eastus.azurecontainerapps.io` |
+| **Frontend (dev)** | `http://localhost:4200` (ng serve) |
+| **Backend (dev)** | `http://localhost:9000` |
+
+### Infraestructura Azure
+
+| Recurso | Nombre | Resource Group |
+|---|---|---|
+| Static Web App | `finanzas-frontend` | `rg-finanzas` |
+| Container App (backend) | `finanzas-app` | `rg-finanzas` |
+
+### CI/CD — GitHub Actions
+
+- **Archivo:** `.github/workflows/deploy-frontend.yml`
+- **Trigger:** push a `master` o PR contra `master`
+- **Pasos:** checkout → setup Node 20 → `npm ci` → `ng build --configuration production` → renombrar `index.csr.html` → `index.html` → deploy con `Azure/static-web-apps-deploy@v1`
+- **Secret requerido:** `AZURE_STATIC_WEB_APPS_API_TOKEN`
+
+### Cómo obtener el secret
+
+```bash
+az staticwebapp secrets list --name finanzas-frontend --resource-group rg-finanzas --query "properties.apiKey" -o tsv
+```
+
+Luego configurar en GitHub: **Settings → Secrets and variables → Actions → `AZURE_STATIC_WEB_APPS_API_TOKEN`**
+
+### Environments Angular
+
+| Archivo | `apiUrl` | Usado en |
+|---|---|---|
+| `src/environments/environment.ts` | `http://localhost:9000` | `ng serve` (dev) |
+| `src/environments/environment.prod.ts` | URL backend Azure | `ng build --configuration production` |
+
+- `angular.json` tiene `fileReplacements` en config `production` para swapear `environment.ts` → `environment.prod.ts`
+- Los adaptadores (`JavaAuthAdapter`, `JavaTransactionAdapter`) usan `environment.apiUrl` como base URL
+
+### staticwebapp.config.json
+
+- Ubicación: `public/staticwebapp.config.json` (se copia al output en build)
+- SPA fallback: todas las rutas redirigen a `index.html` (excepto assets estáticos)
+- Headers de seguridad: `X-Content-Type-Options`, `X-Frame-Options`, `Referrer-Policy`
+
+### Nota sobre SSR vs CSR
+
+- `angular.json` usa `"outputMode": "static"` en producción (genera HTML estático client-side)
+- `app.routes.server.ts` usa `RenderMode.Client` (sin prerendering)
+- Azure Static Web Apps solo sirve archivos estáticos — no soporta el servidor Node.js de SSR
+- SSR con `ng serve` sigue funcionando en desarrollo local
+- Para SSR en producción, sería necesario migrar a Azure App Service o Azure Container Apps
+
 ---
 
 ## Próximos pasos
 
 - [ ] **1. roleGuard en /admin** — `canActivate: [authGuard, roleGuard(UserRole.ADMIN)]`
 - [ ] **2. Admin completo** — gestión de usuarios, tabla con roles
-- [ ] **3. Interceptor HTTP** — adjuntar JWT en headers de todas las peticiones autenticadas
-- [ ] **4. Conectar presupuestos a backend real** — actualmente no hay endpoint de presupuestos
+- [ ] **3. Conectar presupuestos a backend real** — actualmente no hay endpoint de presupuestos
+- [ ] **4. Mock adapter para deudas** — `MockDebtAdapter` para desarrollo sin backend
 - [x] JavaAuthAdapter implementado
 - [x] Persistencia de sesión (localStorage + SSR-safe)
 - [x] Logout funcional
@@ -427,6 +574,20 @@ CREATE INDEX IF NOT EXISTS idx_tx_type ON transactions (type);
 - [x] Gráfico de barras conectado a datos reales (allTransactions)
 - [x] Sección "Gastos por categoría" reemplazó presupuestos mock
 - [x] Summary cards con íconos
+- [x] Interceptor HTTP — adjunta JWT en headers de todas las peticiones autenticadas
+- [x] Deploy a Azure Static Web Apps con CI/CD (GitHub Actions)
+- [x] Environments Angular (dev/prod) con `fileReplacements`
+- [x] Módulo completo de Deudas (hexagonal: domain, application, infrastructure, features)
+- [x] JavaDebtAdapter implementado (GET/POST/PUT/DELETE /api/debts + /api/debts/{id}/payments)
+- [x] DebtStateService con signals (debts, summary, currentDetail, loading, error)
+- [x] DebtListComponent — summary cards, filtros por estado, grid de tarjetas, FAB
+- [x] DebtDetailComponent — hero card, barra de progreso, tabla de amortización, acciones
+- [x] CreateDebtModalComponent — 10 campos + preview cuota en tiempo real (fórmula francesa)
+- [x] RegisterPaymentModalComponent — tipo regular/extra, estrategia de abono
+- [x] Edición y eliminación de deudas (modales inline en DebtDetailComponent)
+- [x] Ítem "Deudas 🏦" en el sidebar del Dashboard y del DebtShell
+- [x] Adaptadores usan `environment.apiUrl` (no más localhost hardcodeado)
+- [x] `staticwebapp.config.json` para SPA fallback routing
 
 ---
 

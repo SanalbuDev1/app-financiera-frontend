@@ -1,0 +1,506 @@
+:host { display: block; }
+
+// ─── PÁGINA ───────────────────────────────────────────────────────────────────
+.debt-list {
+  padding: 1.75rem 2rem 5rem;
+  max-width: 1200px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+// ─── ENCABEZADO ───────────────────────────────────────────────────────────────
+.page-header {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 1rem;
+
+  &__title {
+    font-size: 1.6rem;
+    font-weight: 800;
+    color: var(--text-primary);
+    margin: 0;
+  }
+
+  &__subtitle {
+    font-size: 0.875rem;
+    color: var(--text-secondary);
+    margin: 0.2rem 0 0;
+  }
+}
+
+// ─── BOTONES ─────────────────────────────────────────────────────────────────
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  padding: 0.6rem 1.1rem;
+  border-radius: 10px;
+  border: none;
+  font-size: 0.875rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: transform 0.1s, box-shadow 0.15s, background 0.15s;
+
+  &:hover { transform: translateY(-1px); }
+  &:active { transform: translateY(0); }
+
+  &--primary {
+    background: var(--color-blue);
+    color: #fff;
+    box-shadow: 0 4px 14px rgba(59, 130, 246, 0.3);
+    &:hover { box-shadow: 0 6px 20px rgba(59, 130, 246, 0.4); }
+  }
+
+  &--ghost {
+    background: var(--btn-bg);
+    color: var(--text-secondary);
+    border: 1px solid var(--btn-border);
+    &:hover { background: var(--btn-hover); }
+  }
+}
+
+// ─── RESUMEN ─────────────────────────────────────────────────────────────────
+.summary-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 1rem;
+}
+
+.summary-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 1.25rem;
+  display: flex;
+  align-items: flex-start;
+  gap: 1rem;
+  box-shadow: var(--shadow-card);
+  transition: box-shadow 0.2s;
+  min-width: 0;
+  overflow: hidden;
+
+  &:hover { box-shadow: 0 4px 16px rgba(0,0,0,0.1); }
+
+  &__icon-wrap {
+    width: 46px;
+    height: 46px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.4rem;
+    flex-shrink: 0;
+  }
+
+  &__body {
+    display: flex;
+    flex-direction: column;
+    gap: 0.15rem;
+    min-width: 0;
+  }
+
+  &__label {
+    font-size: 0.72rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--text-muted);
+  }
+
+  &__amount {
+    font-size: 1.35rem;
+    font-weight: 800;
+    color: var(--text-primary);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  &__sub {
+    font-size: 0.72rem;
+    color: var(--text-muted);
+  }
+
+  &__progress {
+    height: 4px;
+    background: var(--border);
+    border-radius: 2px;
+    margin-top: 0.4rem;
+    overflow: hidden;
+    width: 100%;
+  }
+
+  &__progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--color-purple), var(--color-blue));
+    border-radius: 2px;
+    transition: width 0.6s ease;
+  }
+
+  &--blue .summary-card__icon-wrap { background: rgba(59, 130, 246, 0.12); }
+  &--green .summary-card__icon-wrap { background: rgba(16, 185, 129, 0.12); }
+  &--red .summary-card__icon-wrap { background: rgba(239, 68, 68, 0.12); }
+  &--purple .summary-card__icon-wrap { background: rgba(139, 92, 246, 0.12); }
+}
+
+// ─── FILTROS ──────────────────────────────────────────────────────────────────
+.filter-bar {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.filter-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.45rem 0.9rem;
+  border-radius: 20px;
+  border: 1.5px solid var(--border);
+  background: var(--btn-bg);
+  color: var(--text-secondary);
+  font-size: 0.82rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s;
+
+  &:hover {
+    background: var(--btn-hover);
+    border-color: var(--color-blue);
+    color: var(--color-blue);
+  }
+
+  &--active {
+    background: rgba(59, 130, 246, 0.1);
+    border-color: var(--color-blue);
+    color: var(--color-blue);
+    font-weight: 600;
+  }
+
+  &__count {
+    background: var(--btn-hover);
+    color: var(--text-muted);
+    border-radius: 10px;
+    padding: 0 0.45rem;
+    font-size: 0.7rem;
+    font-weight: 700;
+    min-width: 18px;
+    text-align: center;
+  }
+}
+
+// ─── ESTADOS ─────────────────────────────────────────────────────────────────
+.state-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+  padding: 4rem;
+  color: var(--text-muted);
+  font-size: 0.875rem;
+}
+
+.spinner {
+  width: 36px;
+  height: 36px;
+  border: 3px solid var(--border);
+  border-top-color: var(--color-blue);
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+}
+
+@keyframes spin { to { transform: rotate(360deg); } }
+
+.state-error {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 3rem;
+  background: rgba(239, 68, 68, 0.06);
+  border: 1px solid rgba(239, 68, 68, 0.2);
+  border-radius: 16px;
+  color: var(--text-secondary);
+  text-align: center;
+
+  &__icon { font-size: 2rem; }
+}
+
+.state-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 4rem 2rem;
+  color: var(--text-muted);
+  text-align: center;
+
+  &__illustration {
+    color: var(--border);
+    margin-bottom: 0.5rem;
+    opacity: 0.5;
+  }
+
+  h3 {
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: var(--text-secondary);
+    margin: 0;
+  }
+
+  p {
+    font-size: 0.875rem;
+    margin: 0;
+  }
+}
+
+// ─── GRID DE TARJETAS ─────────────────────────────────────────────────────────
+.debts-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+  gap: 1rem;
+}
+
+// ─── TARJETA DE DEUDA ─────────────────────────────────────────────────────────
+.debt-card {
+  background: var(--bg-card);
+  border-radius: 16px;
+  border: 1px solid var(--border);
+  border-left: 4px solid var(--card-accent, var(--color-blue));
+  padding: 1.25rem 1.4rem;
+  cursor: pointer;
+  position: relative;
+  transition: transform 0.15s, box-shadow 0.15s;
+  box-shadow: var(--shadow-card);
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+
+  &:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 8px 28px rgba(0, 0, 0, 0.12);
+  }
+
+  &:focus { outline: 2px solid var(--color-blue); outline-offset: 2px; }
+
+  &--active   { --card-accent: var(--color-blue); }
+  &--paid     { --card-accent: var(--color-green); opacity: 0.85; }
+  &--defaulted { --card-accent: var(--color-red); }
+
+  &__header {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.75rem;
+  }
+
+  &__icon {
+    font-size: 1.6rem;
+    flex-shrink: 0;
+    line-height: 1;
+    margin-top: 2px;
+  }
+
+  &__meta {
+    flex: 1;
+    min-width: 0;
+  }
+
+  &__creditor {
+    font-size: 1rem;
+    font-weight: 700;
+    color: var(--text-primary);
+    margin: 0;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  &__type {
+    font-size: 0.73rem;
+    color: var(--text-muted);
+    margin: 0.15rem 0 0;
+    font-weight: 500;
+  }
+
+  &__description {
+    font-size: 0.82rem;
+    color: var(--text-secondary);
+    margin: 0;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  &__balance {
+    display: flex;
+    align-items: baseline;
+    gap: 0.5rem;
+  }
+
+  &__balance-amount {
+    font-size: 1.5rem;
+    font-weight: 800;
+    color: var(--text-primary);
+    letter-spacing: -0.02em;
+  }
+
+  &__balance-label {
+    font-size: 0.72rem;
+    color: var(--text-muted);
+    font-weight: 500;
+  }
+
+  &__stats {
+    display: flex;
+    gap: 1rem;
+  }
+
+  &__stat {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+
+    div {
+      display: flex;
+      align-items: baseline;
+      gap: 0.2rem;
+    }
+  }
+
+  &__stat-icon { font-size: 0.85rem; }
+
+  &__stat-value {
+    font-size: 0.85rem;
+    font-weight: 700;
+    color: var(--text-primary);
+  }
+
+  &__stat-label {
+    font-size: 0.7rem;
+    color: var(--text-muted);
+  }
+
+  &__next-payment {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    font-size: 0.75rem;
+    color: var(--text-secondary);
+    background: var(--btn-hover);
+    padding: 0.4rem 0.75rem;
+    border-radius: 8px;
+
+    &--paid { color: var(--color-green); background: rgba(16, 185, 129, 0.08); }
+    &--overdue { color: var(--color-red); background: rgba(239, 68, 68, 0.08); }
+  }
+
+  &__arrow {
+    position: absolute;
+    right: 1.2rem;
+    bottom: 1.2rem;
+    color: var(--text-muted);
+    opacity: 0;
+    transition: opacity 0.15s, right 0.15s;
+  }
+
+  &:hover &__arrow {
+    opacity: 1;
+    right: 1rem;
+  }
+}
+
+// ─── BARRA DE PROGRESO ───────────────────────────────────────────────────────
+.progress-bar {
+  height: 7px;
+  background: var(--border);
+  border-radius: 4px;
+  overflow: hidden;
+
+  &__fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--color-blue), var(--color-teal));
+    border-radius: 4px;
+    transition: width 0.6s ease;
+  }
+
+  &__meta {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.7rem;
+    color: var(--text-muted);
+    font-weight: 500;
+    margin-top: 0.25rem;
+  }
+}
+
+// ─── BADGES ───────────────────────────────────────────────────────────────────
+.badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.25rem 0.65rem;
+  border-radius: 20px;
+  font-size: 0.7rem;
+  font-weight: 700;
+  flex-shrink: 0;
+
+  &--active   { background: rgba(16, 185, 129, 0.12); color: var(--color-green); }
+  &--paid     { background: rgba(100, 116, 139, 0.12); color: var(--text-muted); }
+  &--defaulted { background: rgba(239, 68, 68, 0.12); color: var(--color-red); }
+}
+
+// ─── FAB ──────────────────────────────────────────────────────────────────────
+.fab {
+  position: fixed;
+  bottom: 2rem;
+  right: 2rem;
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  background: var(--color-blue);
+  color: #fff;
+  border: none;
+  box-shadow: 0 6px 20px rgba(59, 130, 246, 0.45);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform 0.2s, box-shadow 0.2s;
+  z-index: 50;
+
+  &:hover {
+    transform: scale(1.08);
+    box-shadow: 0 8px 28px rgba(59, 130, 246, 0.55);
+  }
+
+  &:active { transform: scale(0.96); }
+}
+
+// ─── RESPONSIVE ──────────────────────────────────────────────────────────────
+@media (max-width: 640px) {
+  .debt-list { padding: 1.25rem 1rem 6rem; }
+  .page-header { flex-direction: column; align-items: flex-start; }
+  .debts-grid { grid-template-columns: 1fr; }
+
+  .summary-grid { grid-template-columns: repeat(2, 1fr); gap: 0.65rem; }
+
+  .summary-card {
+    padding: 1rem 0.75rem;
+    gap: 0.65rem;
+
+    &__icon-wrap { width: 36px; height: 36px; font-size: 1.1rem; border-radius: 10px; }
+
+    &__label { font-size: 0.65rem; }
+
+    &__amount { font-size: 1.05rem; }
+
+    &__sub { font-size: 0.65rem; }
+  }
+}
+
+@media (max-width: 380px) {
+  .summary-grid { grid-template-columns: 1fr; }
+}

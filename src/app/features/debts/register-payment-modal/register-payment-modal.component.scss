@@ -1,0 +1,394 @@
+:host {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 200;
+}
+
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(4px);
+  z-index: 1;
+}
+
+.modal-panel {
+  position: relative;
+  z-index: 2;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  padding: 1.5rem;
+  width: min(520px, 95vw);
+  max-height: 92vh;
+  overflow-y: auto;
+  color: var(--text-primary);
+  box-shadow: 0 25px 60px rgba(0, 0, 0, 0.25);
+  animation: slideUp 0.25s ease;
+}
+
+@keyframes slideUp {
+  from { opacity: 0; transform: translateY(20px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+// ─── HEADER ──────────────────────────────────────────────────────────────────
+.modal-header {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 1.25rem;
+
+  &__icon { font-size: 1.8rem; }
+
+  &__title {
+    flex: 1;
+    font-size: 1.2rem;
+    font-weight: 700;
+    margin: 0;
+    color: var(--text-primary);
+  }
+
+  &__close {
+    background: var(--btn-bg);
+    border: 1px solid var(--btn-border);
+    color: var(--text-muted);
+    border-radius: 8px;
+    padding: 0.4rem;
+    cursor: pointer;
+    line-height: 0;
+    transition: background 0.2s, color 0.2s;
+
+    &:hover { background: rgba(239, 68, 68, 0.12); color: var(--color-red); }
+  }
+}
+
+// ─── ERROR SERVIDOR ───────────────────────────────────────────────────────────
+.server-error {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: rgba(239, 68, 68, 0.08);
+  border: 1px solid rgba(239, 68, 68, 0.2);
+  border-radius: 10px;
+  padding: 0.7rem 0.9rem;
+  font-size: 0.82rem;
+  color: var(--color-red);
+  font-weight: 500;
+  margin-bottom: 1rem;
+}
+
+// ─── FORMULARIO ──────────────────────────────────────────────────────────────
+.modal-form { display: flex; flex-direction: column; gap: 1rem; }
+
+// ─── TIPO DE PAGO ────────────────────────────────────────────────────────────
+.payment-type-selector {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.payment-type-option {
+  display: block;
+  cursor: pointer;
+  border: 1.5px solid var(--border);
+  border-radius: 12px;
+  padding: 0.85rem 1rem;
+  background: var(--btn-bg);
+  transition: all 0.15s;
+
+  input { display: none; }
+
+  &__body {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.75rem;
+  }
+
+  &__icon { font-size: 1.3rem; flex-shrink: 0; margin-top: 1px; }
+
+  &__title {
+    display: block;
+    font-size: 0.875rem;
+    font-weight: 700;
+    color: var(--text-primary);
+  }
+
+  &__desc {
+    display: block;
+    font-size: 0.72rem;
+    color: var(--text-muted);
+    margin-top: 0.1rem;
+  }
+
+  &--active {
+    border-color: var(--color-blue);
+    background: rgba(59, 130, 246, 0.07);
+
+    .payment-type-option__title { color: var(--color-blue); }
+  }
+
+  &:hover:not(.payment-type-option--active) {
+    border-color: var(--color-blue);
+    background: var(--btn-hover);
+  }
+}
+
+// ─── PRÓXIMA CUOTA CARD ───────────────────────────────────────────────────────
+.next-installment-card {
+  background: linear-gradient(135deg, rgba(16, 185, 129, 0.06) 0%, rgba(6, 182, 212, 0.06) 100%);
+  border: 1.5px solid rgba(16, 185, 129, 0.2);
+  border-radius: 14px;
+  padding: 1rem 1.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+
+  &__header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  &__label {
+    font-size: 0.82rem;
+    font-weight: 700;
+    color: var(--color-green);
+  }
+
+  &__date {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+  }
+
+  &__amounts {
+    display: flex;
+    gap: 1.5rem;
+    flex-wrap: wrap;
+
+    > div {
+      display: flex;
+      flex-direction: column;
+      gap: 0.1rem;
+    }
+  }
+
+  &__sub {
+    font-size: 0.67rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--text-muted);
+  }
+
+  &__val {
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: var(--text-primary);
+  }
+
+  &__total {
+    font-size: 1.2rem;
+    font-weight: 900;
+    color: var(--text-primary);
+    letter-spacing: -0.02em;
+  }
+
+  &__balance {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    border-top: 1px solid rgba(16, 185, 129, 0.15);
+    padding-top: 0.6rem;
+
+    strong { color: var(--text-primary); }
+  }
+}
+
+.total-col { margin-left: auto; }
+
+// ─── AVISO SIN CUOTAS ────────────────────────────────────────────────────────
+.no-installment-warning {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: rgba(245, 158, 11, 0.08);
+  border: 1px solid rgba(245, 158, 11, 0.2);
+  border-radius: 10px;
+  padding: 0.75rem 1rem;
+  font-size: 0.82rem;
+  color: var(--color-yellow);
+  font-weight: 500;
+}
+
+// ─── ESTRATEGIA DE PAGO ──────────────────────────────────────────────────────
+.strategy-selector {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.strategy-option {
+  display: block;
+  cursor: pointer;
+  border: 1.5px solid var(--border);
+  border-radius: 12px;
+  padding: 0.75rem 1rem;
+  background: var(--btn-bg);
+  transition: all 0.15s;
+
+  input { display: none; }
+
+  &__body {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.75rem;
+  }
+
+  &__icon { font-size: 1.1rem; flex-shrink: 0; margin-top: 1px; }
+
+  &__title {
+    display: block;
+    font-size: 0.85rem;
+    font-weight: 700;
+    color: var(--text-primary);
+  }
+
+  &__desc {
+    display: block;
+    font-size: 0.7rem;
+    color: var(--text-muted);
+    margin-top: 0.1rem;
+  }
+
+  &--active {
+    border-color: var(--color-purple);
+    background: rgba(139, 92, 246, 0.07);
+
+    .strategy-option__title { color: var(--color-purple); }
+  }
+
+  &:hover:not(.strategy-option--active) {
+    border-color: var(--color-purple);
+    background: var(--btn-hover);
+  }
+}
+
+// ─── FORM FIELDS ─────────────────────────────────────────────────────────────
+.form-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+
+  &__label {
+    font-size: 0.78rem;
+    font-weight: 600;
+    color: var(--text-secondary);
+  }
+
+  &__optional {
+    color: var(--text-muted);
+    font-weight: 400;
+    font-size: 0.7rem;
+  }
+
+  &__input {
+    background: var(--btn-bg);
+    border: 1.5px solid var(--btn-border);
+    border-radius: 10px;
+    padding: 0.62rem 0.9rem;
+    font-size: 0.875rem;
+    color: var(--text-primary);
+    outline: none;
+    transition: border-color 0.15s;
+    width: 100%;
+    box-sizing: border-box;
+
+    &:focus { border-color: var(--color-blue); }
+    &--error { border-color: var(--color-red); }
+    &--prefixed { padding-left: 1.8rem; }
+  }
+
+  &__input-wrapper {
+    position: relative;
+    display: flex;
+    align-items: center;
+  }
+
+  &__prefix {
+    position: absolute;
+    left: 0.9rem;
+    color: var(--text-muted);
+    font-size: 0.875rem;
+    font-weight: 600;
+    pointer-events: none;
+  }
+
+  &__textarea {
+    resize: vertical;
+    font-family: inherit;
+    min-height: 60px;
+  }
+
+  &__error {
+    font-size: 0.72rem;
+    color: var(--color-red);
+    font-weight: 500;
+  }
+}
+
+.required { color: var(--color-red); }
+
+// ─── ACCIONES ────────────────────────────────────────────────────────────────
+.modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.75rem;
+  padding-top: 0.5rem;
+  border-top: 1px solid var(--border);
+}
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  padding: 0.62rem 1.2rem;
+  border-radius: 10px;
+  border: none;
+  font-size: 0.875rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: transform 0.1s, box-shadow 0.15s, background 0.15s;
+
+  &:hover { transform: translateY(-1px); }
+  &:active { transform: translateY(0); }
+  &:disabled { opacity: 0.55; cursor: not-allowed; transform: none; }
+
+  &--ghost {
+    background: var(--btn-bg);
+    color: var(--text-secondary);
+    border: 1px solid var(--btn-border);
+    &:hover { background: var(--btn-hover); }
+  }
+
+  &--confirm {
+    background: var(--color-green);
+    color: #fff;
+    box-shadow: 0 4px 14px rgba(16, 185, 129, 0.3);
+    &:hover { box-shadow: 0 6px 20px rgba(16, 185, 129, 0.4); }
+  }
+}
+
+.spinner-sm {
+  display: inline-block;
+  width: 14px;
+  height: 14px;
+  border: 2px solid rgba(255,255,255,0.35);
+  border-top-color: #fff;
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+}
+
+@keyframes spin { to { transform: rotate(360deg); } }

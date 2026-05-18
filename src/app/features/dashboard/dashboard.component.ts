@@ -237,6 +237,7 @@ export class DashboardComponent implements OnInit {
     { icon: '🏠', label: 'Inicio',       active: true,  action: () => {} },
     { icon: '💰', label: 'Ingresos',     active: false, action: () => { this.isIncomeModalOpen.set(true);  this.closeSidebar(); } },
     { icon: '💸', label: 'Gastos',       active: false, action: () => { this.isExpenseModalOpen.set(true); this.closeSidebar(); } },
+    { icon: '🏦', label: 'Deudas',       active: false, action: () => { this.router.navigate(['/debts']); this.closeSidebar(); } },
     { icon: '📊', label: 'Presupuestos', active: false, action: () => {} },
     { icon: '📈', label: 'Reportes',     active: false, action: () => {} },
   ];

@@ -1,0 +1,197 @@
+<!-- Backdrop -->
+<div class="modal-backdrop" (click)="onClose()"></div>
+
+<!-- Panel -->
+<div class="modal-panel" role="dialog" aria-modal="true" aria-labelledby="payment-title">
+
+  <!-- Header -->
+  <div class="modal-header">
+    <div class="modal-header__icon">💳</div>
+    <h2 class="modal-header__title" id="payment-title">Registrar pago</h2>
+    <button class="modal-header__close" (click)="onClose()" aria-label="Cerrar">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+      </svg>
+    </button>
+  </div>
+
+  <!-- Error del servidor -->
+  @if (serverError()) {
+    <div class="server-error">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
+      </svg>
+      {{ serverError() }}
+    </div>
+  }
+
+  <!-- Formulario -->
+  <form class="modal-form" [formGroup]="form" (ngSubmit)="onSubmit()">
+
+    <!-- Tipo de pago -->
+    <div class="form-field">
+      <label class="form-field__label">Tipo de pago</label>
+      <div class="payment-type-selector">
+        <label class="payment-type-option"
+          [class.payment-type-option--active]="paymentType === 'regular'">
+          <input type="radio" formControlName="paymentType" value="regular"/>
+          <div class="payment-type-option__body">
+            <span class="payment-type-option__icon">📋</span>
+            <div>
+              <span class="payment-type-option__title">Cuota regular</span>
+              <span class="payment-type-option__desc">Pago de la próxima cuota del cronograma</span>
+            </div>
+          </div>
+        </label>
+        <label class="payment-type-option"
+          [class.payment-type-option--active]="paymentType === 'extra'">
+          <input type="radio" formControlName="paymentType" value="extra"/>
+          <div class="payment-type-option__body">
+            <span class="payment-type-option__icon">🚀</span>
+            <div>
+              <span class="payment-type-option__title">Pago extraordinario</span>
+              <span class="payment-type-option__desc">Abono adicional a capital</span>
+            </div>
+          </div>
+        </label>
+      </div>
+    </div>
+
+    <!-- Preview próxima cuota (solo para regular) -->
+    @if (!isExtra) {
+      @if (nextInstallment) {
+        <div class="next-installment-card">
+          <div class="next-installment-card__header">
+            <span class="next-installment-card__label">Cuota #{{ nextInstallment.installmentNumber }}</span>
+            <span class="next-installment-card__date">
+              Vence {{ formatDate(nextInstallment.dueDate) }}
+            </span>
+          </div>
+          <div class="next-installment-card__amounts">
+            <div>
+              <span class="next-installment-card__sub">Capital</span>
+              <span class="next-installment-card__val">${{ formatAmount(nextInstallment.principalAmount) }}</span>
+            </div>
+            <div>
+              <span class="next-installment-card__sub">Interés</span>
+              <span class="next-installment-card__val">${{ formatAmount(nextInstallment.interestAmount) }}</span>
+            </div>
+            <div class="total-col">
+              <span class="next-installment-card__sub">Total cuota</span>
+              <span class="next-installment-card__total">${{ formatAmount(nextInstallment.totalAmount) }}</span>
+            </div>
+          </div>
+          <div class="next-installment-card__balance">
+            Saldo después del pago: <strong>${{ formatAmount(nextInstallment.balanceAfter) }}</strong>
+          </div>
+        </div>
+      } @else {
+        <div class="no-installment-warning">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
+            <line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/>
+          </svg>
+          No hay cuotas pendientes en el cronograma
+        </div>
+      }
+    }
+
+    <!-- Monto (solo para extra) -->
+    @if (isExtra) {
+      <div class="form-field">
+        <label class="form-field__label" for="totalAmount">
+          Monto del pago extraordinario <span class="required">*</span>
+        </label>
+        <div class="form-field__input-wrapper">
+          <span class="form-field__prefix">$</span>
+          <input
+            id="totalAmount"
+            class="form-field__input form-field__input--prefixed"
+            [class.form-field__input--error]="form.get('totalAmount')?.invalid && form.get('totalAmount')?.touched"
+            type="number"
+            placeholder="0"
+            min="1"
+            step="1"
+            formControlName="totalAmount"/>
+        </div>
+        @if (form.get('totalAmount')?.invalid && form.get('totalAmount')?.touched) {
+          <span class="form-field__error">Ingresa un monto válido</span>
+        }
+      </div>
+
+      <!-- Estrategia de pago extra -->
+      <div class="form-field">
+        <label class="form-field__label">Estrategia de abono <span class="required">*</span></label>
+        <div class="strategy-selector">
+          <label class="strategy-option"
+            [class.strategy-option--active]="form.get('extraPaymentStrategy')?.value === 'reduce_installment'">
+            <input type="radio" formControlName="extraPaymentStrategy" value="reduce_installment"/>
+            <div class="strategy-option__body">
+              <span class="strategy-option__icon">📉</span>
+              <div>
+                <span class="strategy-option__title">Reducir cuota</span>
+                <span class="strategy-option__desc">La cuota mensual disminuye, el plazo se mantiene</span>
+              </div>
+            </div>
+          </label>
+          <label class="strategy-option"
+            [class.strategy-option--active]="form.get('extraPaymentStrategy')?.value === 'reduce_term'">
+            <input type="radio" formControlName="extraPaymentStrategy" value="reduce_term"/>
+            <div class="strategy-option__body">
+              <span class="strategy-option__icon">⏱️</span>
+              <div>
+                <span class="strategy-option__title">Reducir plazo</span>
+                <span class="strategy-option__desc">El plazo se acorta, la cuota se mantiene</span>
+              </div>
+            </div>
+          </label>
+        </div>
+        @if (form.get('extraPaymentStrategy')?.invalid && form.get('extraPaymentStrategy')?.touched) {
+          <span class="form-field__error">Selecciona una estrategia</span>
+        }
+      </div>
+    }
+
+    <!-- Fecha del pago -->
+    <div class="form-field">
+      <label class="form-field__label" for="paymentDate">Fecha del pago</label>
+      <input
+        id="paymentDate"
+        class="form-field__input"
+        type="date"
+        formControlName="paymentDate"/>
+    </div>
+
+    <!-- Notas (opcional) -->
+    <div class="form-field">
+      <label class="form-field__label" for="payNotes">
+        Notas <span class="form-field__optional">(opcional)</span>
+      </label>
+      <textarea
+        id="payNotes"
+        class="form-field__input form-field__textarea"
+        placeholder="Observaciones del pago..."
+        rows="2"
+        formControlName="notes"></textarea>
+    </div>
+
+    <!-- Acciones -->
+    <div class="modal-actions">
+      <button type="button" class="btn btn--ghost" (click)="onClose()">Cancelar</button>
+      <button
+        type="submit"
+        class="btn btn--confirm"
+        [disabled]="saving() || (!isExtra && !nextInstallment)">
+        @if (saving()) {
+          <span class="spinner-sm"></span>
+        } @else {
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+            <polyline points="20 6 9 17 4 12"/>
+          </svg>
+        }
+        Registrar pago
+      </button>
+    </div>
+
+  </form>
+</div>
