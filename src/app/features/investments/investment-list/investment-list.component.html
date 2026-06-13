@@ -1,0 +1,210 @@
+<div class="investment-list">
+  <div class="page-header">
+    <div class="page-header__text">
+      <h1 class="page-header__title">Mis Inversiones</h1>
+      <p class="page-header__subtitle">Portafolio, aportes y proyección de rendimientos</p>
+    </div>
+    <button class="btn btn--primary" (click)="isCreateOpen.set(true)">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+        <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+      </svg>
+      Nueva inversión
+    </button>
+  </div>
+
+  <div class="summary-grid">
+    <div class="summary-card summary-card--blue">
+      <div class="summary-card__icon-wrap">📈</div>
+      <div class="summary-card__body">
+        <span class="summary-card__label">Total invertido actual</span>
+        <span class="summary-card__amount">{{ formatCurrency(summary().totalCurrentAmount) }}</span>
+        <span class="summary-card__sub">{{ summary().totalInvestments }} inversión{{ summary().totalInvestments !== 1 ? 'es' : '' }}</span>
+      </div>
+    </div>
+
+    <div class="summary-card summary-card--green">
+      <div class="summary-card__icon-wrap">💸</div>
+      <div class="summary-card__body">
+        <span class="summary-card__label">Aportes acumulados</span>
+        <span class="summary-card__amount">{{ formatCurrency(summary().totalContributions) }}</span>
+        <span class="summary-card__sub">Capital inyectado al portafolio</span>
+      </div>
+    </div>
+
+    <div class="summary-card summary-card--purple">
+      <div class="summary-card__icon-wrap">🎯</div>
+      <div class="summary-card__body">
+        <span class="summary-card__label">Rendimiento esperado</span>
+        <span class="summary-card__amount">{{ formatCurrency(summary().totalProjectedGain) }}</span>
+        <span class="summary-card__sub">Proyección agregada (API /projection)</span>
+      </div>
+    </div>
+
+    <div class="summary-card summary-card--orange">
+      <div class="summary-card__icon-wrap">🧾</div>
+      <div class="summary-card__body">
+        <span class="summary-card__label">Estado del portafolio</span>
+        <span class="summary-card__amount">{{ summary().activeInvestments }} activas</span>
+        <span class="summary-card__sub">{{ summary().closedInvestments }} cerradas</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="filter-section">
+    <p class="filter-title">Estado</p>
+    <div class="filter-row">
+      @for (f of statusFilters; track f.label) {
+        @if (shouldShowStatusFilter(f.value)) {
+          <button class="filter-chip" [class.filter-chip--active]="activeStatusFilter() === f.value" (click)="setStatusFilter(f.value)">
+            <span>{{ f.label }}</span>
+            <span class="filter-chip__count">{{ getStatusCount(f.value) }}</span>
+          </button>
+        }
+      }
+    </div>
+
+    <p class="filter-title">Tipo de producto</p>
+    <div class="filter-row">
+      @for (f of typeFilters; track f.label) {
+        @if (shouldShowTypeFilter(f.value)) {
+          <button class="filter-chip filter-chip--type" [class.filter-chip--active]="activeTypeFilter() === f.value" (click)="setTypeFilter(f.value)">
+            <span>{{ f.label }}</span>
+            <span class="filter-chip__count">{{ getTypeCount(f.value) }}</span>
+          </button>
+        }
+      }
+    </div>
+  </div>
+
+  @if (loading()) {
+    <div class="state-loading">
+      <div class="spinner"></div>
+      <p>Cargando inversiones...</p>
+    </div>
+  }
+
+  @if (error() && !loading()) {
+    <div class="state-error">
+      <span class="state-error__icon">⚠️</span>
+      <p>{{ error() }}</p>
+      <button class="btn btn--ghost" (click)="loadAll()">Reintentar</button>
+    </div>
+  }
+
+  @if (!loading() && !error()) {
+    @if (filteredInvestments().length === 0) {
+      <div class="state-empty">
+        <div class="state-empty__illustration">📉</div>
+        <h3>Sin inversiones registradas</h3>
+        <p>Crea tu primera inversión y gestiona su detalle en una pantalla dedicada.</p>
+        <button class="btn btn--primary" (click)="isCreateOpen.set(true)">+ Nueva inversión</button>
+      </div>
+    }
+
+    <div class="investments-grid">
+      @for (investment of filteredInvestments(); track investment.id) {
+        <article class="investment-card" (click)="openDetail(investment)" role="button" tabindex="0" (keydown.enter)="openDetail(investment)">
+          <div class="investment-card__header">
+            <div class="investment-card__title-wrap">
+              <h3 class="investment-card__title">{{ investment.name }}</h3>
+              <p class="investment-card__meta">{{ investment.productType }} · {{ frequencyLabel(investment.compoundingFrequency) }}</p>
+            </div>
+            <span class="badge" [class]="statusClass(investment.status)">{{ statusLabel(investment.status) }}</span>
+          </div>
+
+          <div class="investment-card__amounts">
+            <div>
+              <span class="investment-card__label">Inicial</span>
+              <strong>{{ formatCurrency(investment.initialAmount) }}</strong>
+            </div>
+            <div>
+              <span class="investment-card__label">Actual</span>
+              <strong>{{ formatCurrency(investment.currentAmount) }}</strong>
+            </div>
+          </div>
+
+          <div class="investment-card__details">
+            <span>Tasa anual: {{ investment.annualRate }}%</span>
+            <span>Meta: {{ formatDate(investment.targetDate) }}</span>
+          </div>
+
+          <div class="investment-card__arrow">→ Ver detalle</div>
+        </article>
+      }
+    </div>
+  }
+
+  @if (isCreateOpen()) {
+    <div class="modal-backdrop" (click)="isCreateOpen.set(false)"></div>
+    <div class="create-modal" role="dialog" aria-modal="true">
+      <div class="create-modal__header">
+        <h2>Nueva inversión</h2>
+        <button class="icon-btn" (click)="isCreateOpen.set(false)" aria-label="Cerrar">✕</button>
+      </div>
+
+      <form [formGroup]="createForm" (ngSubmit)="onCreateSubmit()" class="create-form">
+        <div class="form-grid">
+          <div class="form-field">
+            <label>Nombre</label>
+            <input type="text" formControlName="name" placeholder="Ej: Fondo renta variable" />
+          </div>
+
+          <div class="form-field">
+            <label>Tipo</label>
+            <select formControlName="productType">
+              @for (type of typeOptions; track type) {
+                <option [value]="type">{{ type }}</option>
+              }
+            </select>
+          </div>
+
+          <div class="form-field">
+            <label>Capitalización</label>
+            <select formControlName="compoundingFrequency">
+              @for (freq of compoundingOptions; track freq) {
+                <option [value]="freq">{{ frequencyLabel(freq) }}</option>
+              }
+            </select>
+          </div>
+
+          <div class="form-field">
+            <label>Monto inicial</label>
+            <input
+              type="text"
+              inputmode="numeric"
+              [value]="initialAmountDisplay()"
+              (input)="onInitialAmountInput($event)"
+              (blur)="onInitialAmountBlur()"
+              placeholder="0"
+            />
+          </div>
+
+          <div class="form-field">
+            <label>Tasa anual (%)</label>
+            <input type="number" formControlName="annualRate" step="0.01" />
+          </div>
+
+          <div class="form-field">
+            <label>Fecha inicio</label>
+            <input type="date" formControlName="startDate" />
+          </div>
+
+          <div class="form-field">
+            <label>Fecha meta</label>
+            <input type="date" formControlName="targetDate" />
+          </div>
+
+          <div class="form-field form-field--full">
+            <label>Notas</label>
+            <textarea formControlName="notes" rows="3" placeholder="Notas opcionales"></textarea>
+          </div>
+        </div>
+
+        <div class="create-modal__actions">
+          <button type="button" class="btn btn--ghost" (click)="isCreateOpen.set(false)">Cancelar</button>
+          <button type="submit" class="btn btn--primary">Crear e ir al detalle</button>
+        </div>
+      </form>
+    </div>
+  }
+</div>

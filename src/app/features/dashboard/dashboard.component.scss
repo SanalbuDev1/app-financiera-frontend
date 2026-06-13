@@ -462,7 +462,7 @@
 // ─── SUMMARY CARDS ────────────────────────────────────────────────────────────
 .summary-cards {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(4, 1fr);
   gap: 1rem;
   margin-bottom: 1rem;
 
@@ -481,6 +481,7 @@
   }
 
   .card--income,
+  .card--month-total,
   .card--expense,
   .card--savings {
     display: flex;

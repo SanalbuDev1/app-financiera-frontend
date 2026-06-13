@@ -27,6 +27,12 @@ export const routes: Routes = [
       import('./features/debts/debts.routes').then((m) => m.debtsRoutes),
   },
   {
+    path: 'investments',
+    canActivate: [authGuard],
+    loadChildren: () =>
+      import('./features/investments/investments.routes').then((m) => m.investmentsRoutes),
+  },
+  {
     path: 'admin',
     canActivate: [authGuard, roleGuard(UserRole.ADMIN)],
     loadComponent: () =>

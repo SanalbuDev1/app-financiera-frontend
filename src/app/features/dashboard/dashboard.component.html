@@ -105,6 +105,17 @@
           <span class="card__value card__value--large">$ {{ summary().totalBalance | number:'1.2-2' }}</span>
         </div>
       </div>
+      <div class="card card--month-total">
+        <span class="card__icon">🧮</span>
+        <div class="card__content">
+          <span class="card__label">Total del mes</span>
+          @if (monthlyTotal() >= 0) {
+            <span class="card__value card__value--green">+ $ {{ monthlyTotal() | number:'1.2-2' }}</span>
+          } @else {
+            <span class="card__value card__value--red">- $ {{ (monthlyTotal() * -1) | number:'1.2-2' }}</span>
+          }
+        </div>
+      </div>
       <div class="card card--income">
         <span class="card__icon">📈</span>
         <div class="card__content">

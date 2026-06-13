@@ -10,6 +10,8 @@ import { TRANSACTION_PORT } from './core/finances/infrastructure/tokens/transact
 import { JavaTransactionAdapter } from './core/finances/infrastructure/adapters/java-transaction.adapter';
 import { DEBT_PORT } from './core/debts/infrastructure/tokens/debt.token';
 import { JavaDebtAdapter } from './core/debts/infrastructure/adapters/java-debt.adapter';
+import { INVESTMENT_PORT } from './core/investments/infrastructure/tokens/investment.token';
+import { JavaInvestmentAdapter } from './core/investments/infrastructure/adapters/java-investment.adapter';
 import { authInterceptor } from './core/auth/infrastructure/interceptors/auth.interceptor';
 import { provideServiceWorker } from '@angular/service-worker';
 export const appConfig: ApplicationConfig = {
@@ -21,6 +23,7 @@ export const appConfig: ApplicationConfig = {
     { provide: AUTH_PORT, useClass: JavaAuthAdapter },
     { provide: TRANSACTION_PORT, useClass: JavaTransactionAdapter },
     { provide: DEBT_PORT, useClass: JavaDebtAdapter },
+    { provide: INVESTMENT_PORT, useClass: JavaInvestmentAdapter },
     provideServiceWorker('ngsw-worker.js', {
       enabled: !isDevMode(),
       registrationStrategy: 'registerWhenStable:30000',

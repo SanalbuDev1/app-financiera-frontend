@@ -53,6 +53,50 @@ export class AuthStateService {
   }
 
   /**
+   * Intenta restaurar la sesión desde localStorage si el estado en memoria está vacío.
+   * @returns Usuario restaurado o null si no hay sesión válida
+   */
+  restoreFromStorageIfNeeded(): User | null {
+    if (!this.isBrowser || this._currentUser()) {
+      return this._currentUser();
+    }
+
+    const stored = localStorage.getItem('currentUser');
+    if (!stored) {
+      return null;
+    }
+
+    try {
+      const user: User = JSON.parse(stored);
+      this._currentUser.set(user);
+      console.log('[AuthStateService] restoreFromStorageIfNeeded() — sesión restaurada');
+      return user;
+    } catch {
+      console.warn('[AuthStateService] restoreFromStorageIfNeeded() — sesión inválida, limpiando');
+      localStorage.removeItem('currentUser');
+      return null;
+    }
+  }
+
+  /**
+   * Actualiza únicamente el token del usuario autenticado, preservando sus demás datos.
+   * @param token Nuevo JWT emitido por el backend
+   */
+  updateToken(token: string): void {
+    const current = this._currentUser();
+    if (!current || !token || current.token === token) {
+      return;
+    }
+
+    const updated: User = { ...current, token };
+    console.log('[AuthStateService] updateToken() — token renovado en sesión');
+    if (this.isBrowser) {
+      localStorage.setItem('currentUser', JSON.stringify(updated));
+    }
+    this._currentUser.set(updated);
+  }
+
+  /**
    * Limpia el estado de autenticación (logout).
    */
   clearCurrentUser(): void {

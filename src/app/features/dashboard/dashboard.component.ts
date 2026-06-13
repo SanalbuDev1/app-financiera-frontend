@@ -1,4 +1,4 @@
-import { Component, OnInit, inject, signal, computed, HostBinding } from '@angular/core';
+import { Component, OnInit, inject, signal, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
@@ -66,6 +66,9 @@ export class DashboardComponent implements OnInit {
 
   /** Resumen financiero del mes (desde el estado global) */
   readonly summary = this.transactionState.summary;
+
+  /** Total neto del mes seleccionado (ingresos - gastos) */
+  readonly monthlyTotal = computed(() => this.summary().monthlyIncome - this.summary().monthlyExpenses);
 
   /** Todas las transacciones del usuario (para gráficos y análisis) */
   private readonly allTransactions = this.transactionState.allTransactions;
@@ -238,7 +241,7 @@ export class DashboardComponent implements OnInit {
     { icon: '💰', label: 'Ingresos',     active: false, action: () => { this.isIncomeModalOpen.set(true);  this.closeSidebar(); } },
     { icon: '💸', label: 'Gastos',       active: false, action: () => { this.isExpenseModalOpen.set(true); this.closeSidebar(); } },
     { icon: '🏦', label: 'Deudas',       active: false, action: () => { this.router.navigate(['/debts']); this.closeSidebar(); } },
-    { icon: '📊', label: 'Presupuestos', active: false, action: () => {} },
+    { icon: '📈', label: 'Inversiones',  active: false, action: () => { this.router.navigate(['/investments']); this.closeSidebar(); } },
     { icon: '📈', label: 'Reportes',     active: false, action: () => {} },
   ];
   /** Valor máximo del gráfico de barras para escalar las alturas */

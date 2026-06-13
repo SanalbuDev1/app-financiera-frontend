@@ -55,10 +55,10 @@ export class DebtsShellComponent {
       action: () => { this.router.navigate(['/debts']); this.closeSidebar(); },
     },
     {
-      icon: '📊',
-      label: 'Presupuestos',
+      icon: '📈',
+      label: 'Inversiones',
       active: false,
-      action: () => {},
+      action: () => { this.router.navigate(['/investments']); this.closeSidebar(); },
     },
     {
       icon: '📈',

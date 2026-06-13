@@ -1,12 +1,9 @@
-<div class="debts-shell" [class.sidebar-open]="isSidebarOpen()" [class.dark]="isDarkTheme()">
-
-  <!-- OVERLAY móvil -->
+<div class="investments-shell" [class.sidebar-open]="isSidebarOpen()" [class.dark]="isDarkTheme()">
   <div class="sidebar-overlay" (click)="closeSidebar()"></div>
 
-  <!-- SIDEBAR -->
   <nav class="sidebar">
     <div class="sidebar__brand">
-      <img class="sidebar__brand-logo" src="logo.svg" alt="App Financiera logo" width="36" height="36"/>
+      <img class="sidebar__brand-logo" src="logo.svg" alt="App Financiera logo" width="36" height="36" />
       <span class="sidebar__brand-name">
         <span class="sidebar__brand-app">App</span>
         <span class="sidebar__brand-fin">Financiera</span>
@@ -15,10 +12,7 @@
 
     <ul class="sidebar__nav">
       @for (item of navItems; track item.label) {
-        <li
-          class="sidebar__nav-item"
-          [class.sidebar__nav-item--active]="item.active"
-          (click)="item.action()">
+        <li class="sidebar__nav-item" [class.sidebar__nav-item--active]="item.active" (click)="item.action()">
           <span class="sidebar__nav-icon">{{ item.icon }}</span>
           <span class="sidebar__nav-label">{{ item.label }}</span>
         </li>
@@ -40,10 +34,7 @@
     </div>
   </nav>
 
-  <!-- CONTENIDO PRINCIPAL -->
-  <div class="debts-main">
-
-    <!-- TOPBAR (móvil) -->
+  <div class="investments-main">
     <header class="topbar">
       <button class="topbar__menu-btn" (click)="toggleSidebar()" aria-label="Abrir menú">
         <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -53,21 +44,14 @@
         </svg>
       </button>
       <div class="topbar__title">
-        <span class="topbar__icon">🏦</span>
-        <span class="topbar__label">Mis Deudas</span>
+        <span class="topbar__icon">📈</span>
+        <span class="topbar__label">Inversiones</span>
       </div>
       <button class="topbar__logout" (click)="onLogout()">
         <span>Salir</span>
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
-          <polyline points="16 17 21 12 16 7"/>
-          <line x1="21" y1="12" x2="9" y2="12"/>
-        </svg>
       </button>
     </header>
 
-    <!-- CONTENIDO DE LA RUTA -->
     <router-outlet />
-
   </div>
 </div>

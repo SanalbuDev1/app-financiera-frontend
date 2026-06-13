@@ -116,6 +116,32 @@ src/app/
 │           │   └── debt.token.ts          InjectionToken<DebtPort>('DEBT_PORT')
 │           └── adapters/
 │               └── java-debt.adapter.ts   implements DebtPort (HttpClient → /api/debts)
+│   └── investments/
+│       ├── domain/
+│       │   ├── models/
+│       │   │   └── investment.model.ts    Investment, InvestmentContribution, InvestmentsSummary,
+│       │   │                              InvestmentProjection + DTOs de inversiones
+│       │   └── ports/
+│       │       └── investment.port.ts     InvestmentPort, InvestmentFilter,
+│       │                                  PaginatedResponse<T>, 10 métodos del módulo
+│       ├── application/
+│       │   ├── services/
+│       │   │   └── investment-state.service.ts providedIn: 'root'
+│       │   └── use-cases/
+│       │       ├── list-investments.use-case.ts
+│       │       ├── get-investment.use-case.ts
+│       │       ├── create-investment.use-case.ts
+│       │       ├── update-investment.use-case.ts
+│       │       ├── delete-investment.use-case.ts
+│       │       ├── register-investment-contribution.use-case.ts
+│       │       ├── list-investment-contributions.use-case.ts
+│       │       ├── get-investment-projection.use-case.ts
+│       │       └── get-investments-summary.use-case.ts
+│       └── infrastructure/
+│           ├── tokens/
+│           │   └── investment.token.ts    InjectionToken<InvestmentPort>('INVESTMENT_PORT')
+│           └── adapters/
+│               └── java-investment.adapter.ts implements InvestmentPort (HttpClient → /api/investments)
 ├── features/
 │   ├── login/
 │   │   ├── login.component.ts             Reactive forms, signals, RouterLink
@@ -161,6 +187,22 @@ src/app/
 │   │       ├── register-payment-modal.component.ts  Regular/Extra, @Input debtId, nextInstallment
 │   │       ├── register-payment-modal.component.html
 │   │       └── register-payment-modal.component.scss
+│   ├── investments/
+│   │   ├── investments-shell.component.ts Shell con sidebar + router-outlet (alineado con deuda/dashboard)
+│   │   ├── investments-shell.component.html
+│   │   ├── investments-shell.component.scss
+│   │   ├── investments.routes.ts          providers en shell + children list/detail
+│   │   ├── investment-list/
+│   │   │   ├── investment-list.component.ts   Lista: summary cards, filtros chip y creación rápida
+│   │   │   ├── investment-list.component.html
+│   │   │   └── investment-list.component.scss
+│   │   ├── investment-detail/
+│   │   │   ├── investment-detail.component.ts Detalle: proyección, aportes, edición y eliminación
+│   │   │   ├── investment-detail.component.html
+│   │   │   └── investment-detail.component.scss
+│   │   ├── investments.component.ts       (legacy MVP; reemplazado por shell/list/detail)
+│   │   ├── investments.component.html
+│   │   └── investments.component.scss
 │   └── admin/
 │       └── admin.component.ts             STUB — pendiente desarrollar
 ├── app.routes.ts
@@ -191,7 +233,9 @@ public/
 /dashboard  → dashboardRoutes        (loadChildren, canActivate: [authGuard])
 /debts      → debtsRoutes            (loadChildren, canActivate: [authGuard])  shell + children
 /debts/:id  → DebtDetailComponent    (child de debtsRoutes)
-/admin      → AdminComponent         (loadComponent, canActivate: [authGuard])  ← pendiente: agregar roleGuard
+/investments      → investmentsRoutes        (loadChildren, canActivate: [authGuard])
+/investments/:id  → InvestmentDetailComponent (child de investmentsRoutes)
+/admin      → AdminComponent         (loadComponent, canActivate: [authGuard, roleGuard(UserRole.ADMIN)])
 ''          → redirectTo: 'login'
 '**'        → redirectTo: 'login'
 ```
@@ -205,10 +249,11 @@ providers: [
   provideBrowserGlobalErrorListeners(),
   provideRouter(routes),
   provideClientHydration(withEventReplay()),
-  provideHttpClient(withFetch()),
+  provideHttpClient(withFetch(), withInterceptors([authInterceptor])),
   { provide: AUTH_PORT, useClass: JavaAuthAdapter },                  // swap a MockAuthAdapter para dev sin backend
   { provide: TRANSACTION_PORT, useClass: JavaTransactionAdapter },    // swap a MockTransactionAdapter para dev sin backend
   { provide: DEBT_PORT, useClass: JavaDebtAdapter },                  // adaptador de deudas
+  { provide: INVESTMENT_PORT, useClass: JavaInvestmentAdapter },      // adaptador de inversiones
   provideServiceWorker('ngsw-worker.js', {
     enabled: !isDevMode(),
     registrationStrategy: 'registerWhenStable:30000',
@@ -314,7 +359,7 @@ El tema se controla con la clase `.dark` en `.dashboard-shell`. Todas las pantal
 .dashboard-shell (flex row)
 ├── .sidebar (220px, sticky, siempre oscuro)
 │   ├── Brand: logo SVG + "App" (gradiente) + "FINANCIERA" (blanco)
-│   ├── Nav: Inicio, Ingresos, Gastos, Presupuestos, Reportes
+│   ├── Nav: Inicio, Ingresos, Gastos, Deudas, Inversiones, Reportes
 │   └── Footer: toggle tema (☀️/🌙) + logout
 ├── .dashboard (flex: 1, scroll principal)
 │   ├── .topbar (sticky, hamburguesa + saludo + logout móvil)
@@ -403,6 +448,8 @@ Ambos emiten: `(saved)="onXxxSaved($event)"` y `(closed)="onXxxModalClosed()"`.
 - Persistido en `localStorage` (SSR-safe con `isPlatformBrowser`)
 - `AuthStateService.clearCurrentUser()` limpia signal + localStorage
 - Al refrescar (F5), `AuthStateService` lee `localStorage` y restaura sesión
+- JWT deslizante: cada response autenticada puede renovar token en header `Authorization`
+- Interceptor actualiza el token en sesión/localStorage y ante `401` fuerza logout + navegación a `/login`
 
 ---
 
@@ -483,6 +530,21 @@ POST /api/debts/{id}/payments        body: RegisterPaymentRequest → 201: DebtP
 GET  /api/debts/{id}/schedule        200: DebtScheduleItem[]
 ```
 
+### Inversiones
+```
+POST /api/investments                      body: CreateInvestmentRequest → 201: Investment
+GET  /api/investments?page=0&size=15&productType=&status=   200: { content, totalElements, totalPages, page, size }
+GET  /api/investments/all                  200: Investment[]
+GET  /api/investments/{id}                 200: Investment
+PUT  /api/investments/{id}                 body: UpdateInvestmentRequest → 200: Investment
+DELETE /api/investments/{id}               204
+
+POST /api/investments/{id}/contributions   body: RegisterInvestmentContributionRequest → 201: InvestmentContribution
+GET  /api/investments/{id}/contributions   200: InvestmentContribution[]
+GET  /api/investments/{id}/projection      200: InvestmentProjection
+GET  /api/investments/summary              200: InvestmentsSummary
+```
+
 #### Tipos válidos para deudas
 - **`debtTypeId`**: `debt-type-credit-card`, `debt-type-bank-loan`, `debt-type-vehicle`, `debt-type-mortgage`, `debt-type-informal`, `debt-type-other`
 - **`frequencyId`**: `freq-monthly`, `freq-biweekly`
@@ -555,9 +617,9 @@ Luego configurar en GitHub: **Settings → Secrets and variables → Actions →
 
 ## Próximos pasos
 
-- [ ] **1. roleGuard en /admin** — `canActivate: [authGuard, roleGuard(UserRole.ADMIN)]`
+- [x] **1. roleGuard en /admin** — `canActivate: [authGuard, roleGuard(UserRole.ADMIN)]`
 - [ ] **2. Admin completo** — gestión de usuarios, tabla con roles
-- [ ] **3. Conectar presupuestos a backend real** — actualmente no hay endpoint de presupuestos
+- [x] **3. Evolucionar módulo de inversiones** — layout tipo deudas (lista/detalle), aportes y proyección avanzada
 - [ ] **4. Mock adapter para deudas** — `MockDebtAdapter` para desarrollo sin backend
 - [x] JavaAuthAdapter implementado
 - [x] Persistencia de sesión (localStorage + SSR-safe)
@@ -588,6 +650,9 @@ Luego configurar en GitHub: **Settings → Secrets and variables → Actions →
 - [x] Ítem "Deudas 🏦" en el sidebar del Dashboard y del DebtShell
 - [x] Adaptadores usan `environment.apiUrl` (no más localhost hardcodeado)
 - [x] `staticwebapp.config.json` para SPA fallback routing
+- [x] Módulo de Inversiones MVP (hexagonal + feature lazy-loaded)
+- [x] JavaInvestmentAdapter implementado con 10 endpoints
+- [x] Interceptor JWT deslizante + manejo global de `401`
 
 ---
 

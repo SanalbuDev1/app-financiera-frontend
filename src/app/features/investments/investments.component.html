@@ -1,0 +1,307 @@
+<div class="investments-shell" [class.sidebar-open]="isSidebarOpen()" [class.dark]="isDarkTheme()">
+  <div class="sidebar-overlay" (click)="closeSidebar()"></div>
+
+  <nav class="sidebar" aria-label="Navegación principal">
+    <div class="sidebar__brand">
+      <img class="sidebar__brand-logo" src="logo.svg" alt="App Financiera logo" width="36" height="36" />
+      <span class="sidebar__brand-name">
+        <span class="sidebar__brand-app">App</span>
+        <span class="sidebar__brand-fin">Financiera</span>
+      </span>
+    </div>
+
+    <ul class="sidebar__nav">
+      @for (item of navItems; track item.label) {
+        <li
+          class="sidebar__nav-item"
+          [class.sidebar__nav-item--active]="item.active"
+          (click)="item.action()">
+          <span class="sidebar__nav-icon">{{ item.icon }}</span>
+          <span class="sidebar__nav-label">{{ item.label }}</span>
+        </li>
+      }
+    </ul>
+
+    <div class="sidebar__footer">
+      <button class="sidebar__theme-btn" (click)="toggleTheme()">
+        {{ isDarkTheme() ? '☀️ Tema claro' : '🌙 Tema oscuro' }}
+      </button>
+      <button class="sidebar__logout-btn" (click)="onLogout()">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+          <polyline points="16 17 21 12 16 7" />
+          <line x1="21" y1="12" x2="9" y2="12" />
+        </svg>
+        <span>Cerrar sesión</span>
+      </button>
+    </div>
+  </nav>
+
+  <main class="investments-main">
+    <header class="topbar">
+      <button class="topbar__menu-btn" (click)="toggleSidebar()" aria-label="Abrir menú">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <line x1="3" y1="6" x2="21" y2="6" />
+          <line x1="3" y1="12" x2="21" y2="12" />
+          <line x1="3" y1="18" x2="21" y2="18" />
+        </svg>
+      </button>
+      <div class="topbar__greeting">
+        <span class="topbar__label">Inversiones</span>
+        <span class="topbar__name">{{ userName()?.name ?? 'Usuario' }}</span>
+      </div>
+      <button class="topbar__logout" (click)="onLogout()">
+        <span>Salir</span>
+      </button>
+    </header>
+
+    <section class="summary-grid" aria-label="Resumen de inversiones">
+      <article class="card card--metric">
+        <p class="card__label">Total inversiones</p>
+        <p class="card__value">{{ summaryView().totalInvestments }}</p>
+      </article>
+      <article class="card card--metric">
+        <p class="card__label">Monto actual</p>
+        <p class="card__value">{{ formatCurrency(summaryView().totalCurrentAmount) }}</p>
+      </article>
+      <article class="card card--metric">
+        <p class="card__label">Aportes acumulados</p>
+        <p class="card__value">{{ formatCurrency(summaryView().totalContributions) }}</p>
+      </article>
+      <article class="card card--metric">
+        <p class="card__label">Ganancia proyectada</p>
+        <p class="card__value">{{ formatCurrency(summaryView().totalProjectedGain) }}</p>
+      </article>
+    </section>
+
+    <section class="panel panel--filters" aria-label="Filtros de inversiones">
+      <h2>Filtros</h2>
+      <div class="filters-grid">
+        <label>
+          Estado
+          <select #statusSelect [value]="selectedStatus()" (change)="onStatusFilterChange(statusSelect.value)">
+            <option value="">Todos</option>
+            @for (status of statusFilters; track status) {
+              <option [value]="status">{{ statusLabel(status) }}</option>
+            }
+          </select>
+        </label>
+
+        <label>
+          Tipo de producto
+          <select #productSelect [value]="selectedProductType()" (change)="onProductFilterChange(productSelect.value)">
+            <option value="">Todos</option>
+            @for (product of productFilters; track product) {
+              <option [value]="product">{{ product }}</option>
+            }
+          </select>
+        </label>
+      </div>
+    </section>
+
+    <section class="panel panel--list" aria-label="Listado de inversiones">
+      <h2>Inversiones</h2>
+      @if (loading()) {
+        <p>Cargando inversiones...</p>
+      } @else if (investments().length === 0) {
+        <p>No hay inversiones registradas.</p>
+      } @else {
+        <div class="table-wrapper">
+          <table>
+            <thead>
+              <tr>
+                <th>Nombre</th>
+                <th>Tipo</th>
+                <th>Frecuencia</th>
+                <th>Monto actual</th>
+                <th>Estado</th>
+                <th>Acción</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (investment of investments(); track investment.id) {
+                <tr>
+                  <td>{{ investment.name }}</td>
+                  <td>{{ investment.productType }}</td>
+                  <td>{{ frequencyLabel(investment.compoundingFrequency) }}</td>
+                  <td>{{ formatCurrency(investment.currentAmount) }}</td>
+                  <td>{{ statusLabel(investment.status) }}</td>
+                  <td>
+                    <button type="button" class="btn btn--small" (click)="selectInvestment(investment)">Ver</button>
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      }
+
+      @if (pages().length > 1) {
+        <div class="pagination">
+          @for (page of pages(); track page) {
+            <button
+              type="button"
+              class="btn btn--small"
+              [class.btn--active]="page === currentPage()"
+              (click)="loadPage(page)">
+              {{ page + 1 }}
+            </button>
+          }
+        </div>
+      }
+    </section>
+
+    <section class="panel two-cols" aria-label="Edición y detalle de inversión">
+      <article>
+        <h2>@if (isEditing()) { Editar inversión } @else { Nueva inversión }</h2>
+
+        <form [formGroup]="investmentForm" (ngSubmit)="onSubmitInvestment()" class="form-grid">
+          <label>
+            Nombre
+            <input type="text" formControlName="name" />
+          </label>
+
+          <label>
+            Tipo
+            <select formControlName="productType">
+              @for (type of productTypes; track type) {
+                <option [value]="type">{{ type }}</option>
+              }
+            </select>
+          </label>
+
+          <label>
+            Capitalización
+            <select formControlName="compoundingFrequency">
+              @for (freq of compoundingOptions; track freq) {
+                <option [value]="freq">{{ frequencyLabel(freq) }}</option>
+              }
+            </select>
+          </label>
+
+          <label>
+            Monto inicial
+            <input type="number" formControlName="initialAmount" />
+          </label>
+
+          <label>
+            Tasa anual (%)
+            <input type="number" formControlName="annualRate" step="0.01" />
+          </label>
+
+          <label>
+            Fecha inicio
+            <input type="date" formControlName="startDate" />
+          </label>
+
+          <label>
+            Fecha meta
+            <input type="date" formControlName="targetDate" />
+          </label>
+
+          <label>
+            Estado
+            <select formControlName="status">
+              @for (status of statuses; track status) {
+                <option [value]="status">{{ statusLabel(status) }}</option>
+              }
+            </select>
+          </label>
+
+          <label class="full-width">
+            Notas
+            <textarea formControlName="notes" rows="3"></textarea>
+          </label>
+
+          <div class="actions full-width">
+            <button type="submit" class="btn btn--primary">
+              @if (isEditing()) { Guardar cambios } @else { Crear inversión }
+            </button>
+            <button type="button" class="btn" (click)="clearSelection()">Limpiar</button>
+            @if (isEditing()) {
+              <button type="button" class="btn btn--danger" (click)="onDeleteInvestment()">Eliminar</button>
+            }
+          </div>
+        </form>
+      </article>
+
+      <article>
+        <h2>Detalle seleccionado</h2>
+        @if (selectedInvestment(); as selected) {
+          <div class="detail-grid">
+            <div class="detail-chip">
+              <span>Producto</span>
+              <strong>{{ selected.productType }}</strong>
+            </div>
+            <div class="detail-chip">
+              <span>Monto inicial</span>
+              <strong>{{ formatCurrency(selected.initialAmount) }}</strong>
+            </div>
+            <div class="detail-chip">
+              <span>Monto actual</span>
+              <strong>{{ formatCurrency(selected.currentAmount) }}</strong>
+            </div>
+            <div class="detail-chip">
+              <span>Estado</span>
+              <strong>{{ statusLabel(selected.status) }}</strong>
+            </div>
+          </div>
+          @if (projection(); as p) {
+            <div class="projection-box">
+              <p><strong>Proyección:</strong> {{ formatCurrency(p.projectedAmount) }}</p>
+              <p><strong>Ganancia proyectada:</strong> {{ formatCurrency(p.projectedGain) }}</p>
+            </div>
+          }
+
+          <h3>Aportes</h3>
+          <form [formGroup]="contributionForm" (ngSubmit)="onRegisterContribution()" class="form-grid">
+            <label>
+              Fecha aporte
+              <input type="date" formControlName="contributionDate" />
+            </label>
+            <label>
+              Monto
+              <input type="number" formControlName="amount" />
+            </label>
+            <label>
+              Tipo
+              <select formControlName="contributionType">
+                <option value="regular">regular</option>
+                <option value="extra">extra</option>
+              </select>
+            </label>
+            <label class="full-width">
+              Notas
+              <textarea formControlName="notes" rows="2"></textarea>
+            </label>
+            <div class="actions full-width">
+              <button type="submit" class="btn btn--primary">Registrar aporte</button>
+            </div>
+          </form>
+
+          @if (contributions().length === 0) {
+            <p class="empty">Sin aportes registrados.</p>
+          } @else {
+            <ul class="contrib-list">
+              @for (item of contributions(); track item.id) {
+                <li>
+                  <span>{{ item.contributionDate }}</span>
+                  <span>{{ item.contributionType }}</span>
+                  <strong>{{ formatCurrency(item.amount) }}</strong>
+                </li>
+              }
+            </ul>
+          }
+        } @else {
+          <p>Selecciona una inversión para ver su detalle y registrar aportes.</p>
+        }
+      </article>
+    </section>
+
+    @if (error()) {
+      <section class="panel error-panel" aria-live="polite">
+        {{ error() }}
+      </section>
+    }
+  </main>
+</div>

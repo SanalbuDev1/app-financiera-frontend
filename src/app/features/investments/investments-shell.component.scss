@@ -1,58 +1,44 @@
-// ═══════════════════════════════════════════════════════════════════════════
-//  Shell de Deudas — misma paleta que DashboardComponent
-// ═══════════════════════════════════════════════════════════════════════════
-
 :host { display: block; }
 
-// ─── SHELL ────────────────────────────────────────────────────────────────────
-.debts-shell {
-  // ── Tema claro (default) ──────────────────────────────────────────────
-  --bg-main:         #F5F7FA;
-  --bg-card:         #FFFFFF;
-  --bg-sidebar:      #0D1B2A;
-  --border:          #E2E8F0;
-  --shadow-card:     0 1px 4px rgba(27, 38, 59, 0.07);
+.investments-shell {
+  --bg-main: #f5f7fa;
+  --bg-card: #ffffff;
+  --bg-sidebar: #0d1b2a;
+  --border: #e2e8f0;
+  --shadow-card: 0 1px 4px rgba(27, 38, 59, 0.07);
 
-  --text-primary:    #1B263B;
-  --text-secondary:  #64748B;
-  --text-muted:      #94A3B8;
+  --text-primary: #1b263b;
+  --text-secondary: #64748b;
+  --text-muted: #94a3b8;
 
-  --btn-bg:          #FFFFFF;
-  --btn-border:      #E2E8F0;
-  --btn-hover:       #F1F5F9;
+  --btn-bg: #ffffff;
+  --btn-border: #e2e8f0;
+  --btn-hover: #f1f5f9;
 
-  --color-blue:      #3B82F6;
-  --color-green:     #10B981;
-  --color-red:       #EF4444;
-  --color-yellow:    #F59E0B;
-  --color-purple:    #8B5CF6;
-  --color-teal:      #06B6D4;
-  --color-orange:    #F97316;
+  --color-blue: #3b82f6;
+  --color-red: #ef4444;
 
   display: flex;
   min-height: 100vh;
   background: var(--bg-main);
   color: var(--text-primary);
-  transition: background 0.3s, color 0.3s;
 
-  // ── Tema oscuro ───────────────────────────────────────────────────────
   &.dark {
-    --bg-main:         #0D1B2A;
-    --bg-card:         #1B263B;
-    --border:          rgba(255, 255, 255, 0.08);
-    --shadow-card:     0 2px 8px rgba(0, 0, 0, 0.35);
+    --bg-main: #0d1b2a;
+    --bg-card: #1b263b;
+    --border: rgba(255, 255, 255, 0.08);
+    --shadow-card: 0 2px 8px rgba(0, 0, 0, 0.35);
 
-    --text-primary:    #F5F7FA;
-    --text-secondary:  #94A3B8;
-    --text-muted:      #64748B;
+    --text-primary: #f5f7fa;
+    --text-secondary: #94a3b8;
+    --text-muted: #64748b;
 
-    --btn-bg:          rgba(255, 255, 255, 0.07);
-    --btn-border:      rgba(255, 255, 255, 0.1);
-    --btn-hover:       rgba(255, 255, 255, 0.14);
+    --btn-bg: rgba(255, 255, 255, 0.07);
+    --btn-border: rgba(255, 255, 255, 0.1);
+    --btn-hover: rgba(255, 255, 255, 0.14);
   }
 }
 
-// ─── SIDEBAR (siempre oscuro) ─────────────────────────────────────────────────
 .sidebar {
   width: 220px;
   height: 100vh;
@@ -93,7 +79,7 @@
     font-size: 1.05rem;
     font-weight: 800;
     font-style: italic;
-    background: linear-gradient(135deg, #3B82F6 0%, #06B6D4 50%, #10B981 100%);
+    background: linear-gradient(135deg, #3b82f6 0%, #06b6d4 50%, #10b981 100%);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
@@ -103,7 +89,7 @@
   &__brand-fin {
     font-size: 0.78rem;
     font-weight: 600;
-    color: #F5F7FA;
+    color: #f5f7fa;
     letter-spacing: 0.06em;
     text-transform: uppercase;
     opacity: 0.85;
@@ -125,17 +111,17 @@
     border-radius: 0 10px 10px 0;
     margin-right: 0.75rem;
     transition: background 0.2s, color 0.2s;
-    color: #94A3B8;
+    color: #94a3b8;
     font-size: 0.9rem;
 
     &:hover {
       background: rgba(255, 255, 255, 0.07);
-      color: #F5F7FA;
+      color: #f5f7fa;
     }
 
     &--active {
       background: rgba(59, 130, 246, 0.2);
-      color: #3B82F6;
+      color: #3b82f6;
       font-weight: 600;
     }
   }
@@ -157,17 +143,16 @@
     gap: 0.5rem;
     background: rgba(255, 255, 255, 0.05);
     border: 1px solid rgba(255, 255, 255, 0.08);
-    color: #94A3B8;
+    color: #94a3b8;
     font-size: 0.82rem;
     cursor: pointer;
     padding: 0.45rem 0.75rem;
     border-radius: 8px;
     width: 100%;
-    transition: background 0.2s, color 0.2s;
 
     &:hover {
       background: rgba(59, 130, 246, 0.15);
-      color: #3B82F6;
+      color: #3b82f6;
     }
   }
 
@@ -177,19 +162,25 @@
     gap: 0.5rem;
     background: none;
     border: none;
-    color: #64748B;
+    color: #64748b;
     font-size: 0.85rem;
     cursor: pointer;
     padding: 0.45rem 0;
     width: 100%;
-    transition: color 0.2s;
 
-    &:hover { color: #EF4444; }
+    &:hover { color: var(--color-red); }
   }
 }
 
-// ─── CONTENIDO PRINCIPAL ──────────────────────────────────────────────────────
-.debts-main {
+.sidebar-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.45);
+  z-index: 40;
+}
+
+.investments-main {
   flex: 1;
   min-width: 0;
   overflow-x: hidden;
@@ -197,7 +188,6 @@
   flex-direction: column;
 }
 
-// ─── TOPBAR ───────────────────────────────────────────────────────────────────
 .topbar {
   display: flex;
   align-items: center;
@@ -218,7 +208,6 @@
     cursor: pointer;
     color: var(--text-secondary);
     line-height: 0;
-    transition: background 0.15s;
 
     &:hover { background: var(--btn-hover); }
   }
@@ -250,22 +239,14 @@
     font-size: 0.78rem;
     font-weight: 500;
     cursor: pointer;
-    transition: background 0.15s;
 
-    &:hover { background: rgba(239, 68, 68, 0.08); color: var(--color-red); }
+    &:hover {
+      background: rgba(239, 68, 68, 0.08);
+      color: var(--color-red);
+    }
   }
 }
 
-// ─── OVERLAY MÓVIL ───────────────────────────────────────────────────────────
-.sidebar-overlay {
-  display: none;
-  position: fixed;
-  inset: 0;
-  background: rgba(0, 0, 0, 0.45);
-  z-index: 40;
-}
-
-// ─── RESPONSIVE ──────────────────────────────────────────────────────────────
 @media (max-width: 768px) {
   .sidebar {
     position: fixed;
@@ -276,7 +257,7 @@
     transform: translateX(-100%);
   }
 
-  .debts-shell.sidebar-open {
+  .investments-shell.sidebar-open {
     .sidebar { transform: translateX(0); }
     .sidebar-overlay { display: block; }
   }

@@ -1,0 +1,200 @@
+<div class="investment-detail">
+  @if (loading() && !investment()) {
+    <div class="state-loading">
+      <div class="spinner"></div>
+      <p>Cargando detalle...</p>
+    </div>
+  }
+
+  @if (error() && !investment()) {
+    <div class="state-error">
+      <span>⚠️</span>
+      <p>{{ error() }}</p>
+      <button class="btn btn--ghost" (click)="loadDetail()">Reintentar</button>
+      <button class="btn btn--ghost" (click)="goBack()">← Volver</button>
+    </div>
+  }
+
+  @if (investment(); as inv) {
+    <div class="detail-topbar">
+      <button class="btn-back" (click)="goBack()">← Mis inversiones</button>
+
+      <div class="detail-actions">
+        <button class="btn btn--ghost" (click)="openEdit()">Editar</button>
+        <button class="btn btn--danger" (click)="isDeleteConfirm.set(true)">Eliminar</button>
+      </div>
+    </div>
+
+    <div class="investment-hero">
+      <div class="investment-hero__top">
+        <div>
+          <h1>{{ inv.name }}</h1>
+          <p>{{ inv.productType }} · {{ frequencyLabel(inv.compoundingFrequency) }}</p>
+        </div>
+        <span class="badge" [class]="statusClass(inv.status)">{{ statusLabel(inv.status) }}</span>
+      </div>
+
+      <div class="hero-grid">
+        <div class="hero-stat">
+          <span>Capital inicial</span>
+          <strong>{{ formatCurrency(inv.initialAmount) }}</strong>
+        </div>
+        <div class="hero-stat">
+          <span>Capital actual</span>
+          <strong>{{ formatCurrency(inv.currentAmount) }}</strong>
+        </div>
+        <div class="hero-stat">
+          <span>Tasa anual</span>
+          <strong>{{ inv.annualRate }}%</strong>
+        </div>
+        <div class="hero-stat">
+          <span>Fecha meta</span>
+          <strong>{{ formatDate(inv.targetDate) }}</strong>
+        </div>
+      </div>
+
+      <div class="projection-box">
+        <h3>Rendimiento esperado</h3>
+        @if (projectionView(); as p) {
+          <div class="projection-grid">
+            <div>
+              <span>Monto proyectado</span>
+              <strong>{{ formatCurrency(p.projectedAmount) }}</strong>
+            </div>
+            <div>
+              <span>Ganancia proyectada</span>
+              <strong>{{ formatCurrency(p.projectedGain) }}</strong>
+            </div>
+            <div>
+              <span>Horizonte</span>
+              <strong>{{ p.monthsToTarget }} meses</strong>
+            </div>
+            <div>
+              <span>Retorno estimado</span>
+              <strong>{{ projectedReturnPercent() | number:'1.0-2' }}%</strong>
+            </div>
+          </div>
+          <p class="projection-box__hint">Simulación obtenida desde API; si faltan campos se muestra una estimación local de respaldo.</p>
+        }
+      </div>
+    </div>
+
+    <div class="detail-layout">
+      <section class="panel">
+        <h2>Registrar aporte</h2>
+        <form [formGroup]="contributionForm" (ngSubmit)="onContributionSubmit()" class="form-grid">
+          <div class="form-field">
+            <label>Fecha</label>
+            <input type="date" formControlName="contributionDate" />
+          </div>
+          <div class="form-field">
+            <label>Monto</label>
+            <input type="number" formControlName="amount" />
+          </div>
+          <div class="form-field">
+            <label>Tipo</label>
+            <select formControlName="contributionType">
+              @for (type of contributionTypeOptions; track type) {
+                <option [value]="type">{{ type }}</option>
+              }
+            </select>
+          </div>
+          <div class="form-field form-field--full">
+            <label>Notas</label>
+            <textarea formControlName="notes" rows="3"></textarea>
+          </div>
+          <div class="actions form-field--full">
+            <button class="btn btn--primary" type="submit" [disabled]="saving()">Guardar aporte</button>
+          </div>
+        </form>
+      </section>
+
+      <section class="panel">
+        <h2>Historial de aportes</h2>
+        @if (contributions().length === 0) {
+          <p class="empty">Sin aportes registrados.</p>
+        } @else {
+          <ul class="contrib-list">
+            @for (item of contributions(); track item.id) {
+              <li>
+                <div>
+                  <span class="contrib-list__date">{{ formatDate(item.contributionDate) }}</span>
+                  <span class="contrib-list__type">{{ item.contributionType }}</span>
+                </div>
+                <strong>{{ formatCurrency(item.amount) }}</strong>
+              </li>
+            }
+          </ul>
+        }
+      </section>
+    </div>
+
+    @if (actionError()) {
+      <div class="inline-error">⚠️ {{ actionError() }}</div>
+    }
+  }
+
+  @if (isEditMode()) {
+    <div class="modal-backdrop" (click)="isEditMode.set(false)"></div>
+    <div class="edit-modal" role="dialog" aria-modal="true">
+      <div class="edit-modal__header">
+        <h2>Editar inversión</h2>
+        <button class="icon-btn" (click)="isEditMode.set(false)" aria-label="Cerrar">✕</button>
+      </div>
+
+      <form [formGroup]="editForm" (ngSubmit)="onEditSubmit()" class="edit-form">
+        <div class="form-grid">
+          <div class="form-field">
+            <label>Nombre</label>
+            <input type="text" formControlName="name" />
+          </div>
+          <div class="form-field">
+            <label>Capitalización</label>
+            <select formControlName="compoundingFrequency">
+              @for (freq of compoundingOptions; track freq) {
+                <option [value]="freq">{{ frequencyLabel(freq) }}</option>
+              }
+            </select>
+          </div>
+          <div class="form-field">
+            <label>Tasa anual (%)</label>
+            <input type="number" step="0.01" formControlName="annualRate" />
+          </div>
+          <div class="form-field">
+            <label>Fecha meta</label>
+            <input type="date" formControlName="targetDate" />
+          </div>
+          <div class="form-field">
+            <label>Estado</label>
+            <select formControlName="status">
+              @for (status of statusOptions; track status) {
+                <option [value]="status">{{ statusLabel(status) }}</option>
+              }
+            </select>
+          </div>
+          <div class="form-field form-field--full">
+            <label>Notas</label>
+            <textarea formControlName="notes" rows="3"></textarea>
+          </div>
+        </div>
+
+        <div class="actions">
+          <button class="btn btn--ghost" type="button" (click)="isEditMode.set(false)">Cancelar</button>
+          <button class="btn btn--primary" type="submit" [disabled]="saving()">Guardar</button>
+        </div>
+      </form>
+    </div>
+  }
+
+  @if (isDeleteConfirm()) {
+    <div class="modal-backdrop" (click)="isDeleteConfirm.set(false)"></div>
+    <div class="confirm-modal" role="alertdialog" aria-modal="true">
+      <h2>Eliminar inversión</h2>
+      <p>¿Deseas eliminar esta inversión? Esta acción no se puede deshacer.</p>
+      <div class="actions">
+        <button class="btn btn--ghost" (click)="isDeleteConfirm.set(false)">Cancelar</button>
+        <button class="btn btn--danger" (click)="onDeleteConfirm()" [disabled]="saving()">Sí, eliminar</button>
+      </div>
+    </div>
+  }
+</div>
