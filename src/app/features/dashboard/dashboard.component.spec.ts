@@ -239,43 +239,83 @@ describe('DashboardComponent', () => {
     it('should create expense adjustment when monthly total is positive', () => {
       const txState = TestBed.inject(TransactionStateService);
       txState.setSummary({
-        totalBalance: 0,
+        totalBalance: 1200,
         monthlyIncome: 1200,
         monthlyExpenses: 0,
         monthlySavings: 0,
         savingsGoal: 3000,
       });
+      createUseCase.execute.mockImplementation((_: unknown, cb?: () => void) => cb?.());
 
       component.onReconcileCash();
 
       expect(confirmMock).toHaveBeenCalled();
-      expect(createUseCase.execute).toHaveBeenCalledWith(
+      expect(createUseCase.execute).toHaveBeenNthCalledWith(
+        1,
         expect.objectContaining({
-          description: 'Cuadre de caja (ajuste automático)',
+          description: 'Cuadre de caja (ajuste mensual automático)',
           amount: 1200,
           type: 'expense',
           category: 'other',
         }),
         expect.any(Function),
       );
+      expect(createUseCase.execute).toHaveBeenCalledTimes(1);
     });
 
     it('should create income adjustment when monthly total is negative', () => {
       const txState = TestBed.inject(TransactionStateService);
       txState.setSummary({
-        totalBalance: 0,
+        totalBalance: -540,
         monthlyIncome: 0,
         monthlyExpenses: 540,
         monthlySavings: 0,
         savingsGoal: 3000,
       });
+      createUseCase.execute.mockImplementation((_: unknown, cb?: () => void) => cb?.());
 
       component.onReconcileCash();
 
-      expect(createUseCase.execute).toHaveBeenCalledWith(
+      expect(createUseCase.execute).toHaveBeenNthCalledWith(
+        1,
         expect.objectContaining({
           amount: 540,
           type: 'income',
+        }),
+        expect.any(Function),
+      );
+      expect(createUseCase.execute).toHaveBeenCalledTimes(1);
+    });
+
+    it('should create a second adjustment when month and global balance differ', () => {
+      const txState = TestBed.inject(TransactionStateService);
+      txState.setSummary({
+        totalBalance: 250,
+        monthlyIncome: 100,
+        monthlyExpenses: 0,
+        monthlySavings: 0,
+        savingsGoal: 3000,
+      });
+      createUseCase.execute.mockImplementation((_: unknown, cb?: () => void) => cb?.());
+
+      component.onReconcileCash();
+
+      expect(createUseCase.execute).toHaveBeenCalledTimes(2);
+      expect(createUseCase.execute).toHaveBeenNthCalledWith(
+        1,
+        expect.objectContaining({
+          description: 'Cuadre de caja (ajuste mensual automático)',
+          amount: 100,
+          type: 'expense',
+        }),
+        expect.any(Function),
+      );
+      expect(createUseCase.execute).toHaveBeenNthCalledWith(
+        2,
+        expect.objectContaining({
+          description: 'Cuadre de caja (ajuste balance total)',
+          amount: 150,
+          type: 'expense',
         }),
         expect.any(Function),
       );
@@ -300,7 +340,7 @@ describe('DashboardComponent', () => {
     it('should show alert and skip when monthly total is already zero', () => {
       const txState = TestBed.inject(TransactionStateService);
       txState.setSummary({
-        totalBalance: 250,
+        totalBalance: 0,
         monthlyIncome: 0,
         monthlyExpenses: 0,
         monthlySavings: 0,
@@ -311,6 +351,29 @@ describe('DashboardComponent', () => {
 
       expect(alertMock).toHaveBeenCalled();
       expect(createUseCase.execute).not.toHaveBeenCalled();
+    });
+
+    it('should create only global adjustment when month is already zero but balance is not', () => {
+      const txState = TestBed.inject(TransactionStateService);
+      txState.setSummary({
+        totalBalance: 320,
+        monthlyIncome: 0,
+        monthlyExpenses: 0,
+        monthlySavings: 0,
+        savingsGoal: 3000,
+      });
+
+      component.onReconcileCash();
+
+      expect(createUseCase.execute).toHaveBeenCalledTimes(1);
+      expect(createUseCase.execute).toHaveBeenCalledWith(
+        expect.objectContaining({
+          description: 'Cuadre de caja (ajuste balance total)',
+          amount: 320,
+          type: 'expense',
+        }),
+        expect.any(Function),
+      );
     });
 
     it('should continue reconciliation when confirm is unavailable', () => {

@@ -372,6 +372,8 @@ El tema se controla con la clase `.dark` en `.dashboard-shell`. Todas las pantal
 └── <app-expense-modal> (condicional @if isExpenseModalOpen)
 ```
 
+- Botón **Cuadrar caja**: crea 1 o 2 transacciones automáticas para dejar en `0` el total del mes seleccionado y también el balance total global.
+
 ### Signals del Dashboard
 
 | Signal | Tipo | Descripción |

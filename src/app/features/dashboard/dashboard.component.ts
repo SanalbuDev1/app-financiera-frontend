@@ -456,17 +456,17 @@ export class DashboardComponent implements OnInit {
     }
 
     const monthNet = this.monthlyTotal();
-    const amount = Number(Math.abs(monthNet).toFixed(2));
+    const globalBalance = this.summary().totalBalance;
+    const monthAmount = Number(Math.abs(monthNet).toFixed(2));
+    const balanceAmount = Number(Math.abs(globalBalance).toFixed(2));
 
-    if (amount === 0) {
-      this.notifyUser('El total del mes ya está en cero. No se necesita cuadre de caja.');
+    if (monthAmount === 0 && balanceAmount === 0) {
+      this.notifyUser('El total del mes y el balance total ya están en cero. No se necesita cuadre de caja.');
       return;
     }
 
-    const type = monthNet > 0 ? 'expense' : 'income';
-    const actionLabel = monthNet > 0 ? 'gasto' : 'ingreso';
     const monthLabel = this.MONTH_FULL[this.selectedMonth()];
-    const confirmationMessage = `Se creará un ${actionLabel} de ajuste por $ ${amount.toLocaleString('es-CO', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} para dejar el total de ${monthLabel} en $ 0.00. ¿Deseas continuar?`;
+    const confirmationMessage = `Se crearán ajustes automáticos para dejar en $ 0.00 el total de ${monthLabel} y también el balance total. ¿Deseas continuar?`;
     const confirmed = this.askForConfirmation(confirmationMessage);
 
     if (!confirmed) {
@@ -474,20 +474,55 @@ export class DashboardComponent implements OnInit {
       return;
     }
 
-    const dto: CreateTransactionDto = {
-      description: 'Cuadre de caja (ajuste automático)',
-      amount,
-      category: 'other',
-      type,
-      transactionDate: this.toIsoDate(this.getReconciliationDateForSelectedMonth()),
-      notes: `Ajuste automático desde dashboard. Total mensual previo: ${monthNet.toFixed(2)}. Total mensual objetivo: 0.00.`,
+    const adjustments: CreateTransactionDto[] = [];
+
+    if (monthAmount > 0) {
+      const monthType = monthNet > 0 ? 'expense' : 'income';
+      adjustments.push({
+        description: 'Cuadre de caja (ajuste mensual automático)',
+        amount: monthAmount,
+        category: 'other',
+        type: monthType,
+        transactionDate: this.toIsoDate(this.getReconciliationDateForSelectedMonth()),
+        notes: `Ajuste para llevar el total mensual de ${monthLabel} a 0.00. Total mensual previo: ${monthNet.toFixed(2)}.`,
+      });
+    }
+
+    const remainingBalanceAfterMonthAdjustment = Number((globalBalance - monthNet).toFixed(2));
+    const remainingBalanceAmount = Number(Math.abs(remainingBalanceAfterMonthAdjustment).toFixed(2));
+
+    if (remainingBalanceAmount > 0) {
+      const balanceType = remainingBalanceAfterMonthAdjustment > 0 ? 'expense' : 'income';
+      adjustments.push({
+        description: 'Cuadre de caja (ajuste balance total)',
+        amount: remainingBalanceAmount,
+        category: 'other',
+        type: balanceType,
+        transactionDate: this.toIsoDate(this.getOutOfMonthReconciliationDate()),
+        notes: `Ajuste complementario para llevar balance total a 0.00 sin alterar el total mensual de ${monthLabel}.`,
+      });
+    }
+
+    this.executeReconciliationAdjustments(adjustments, () => {
+      this.reloadAll();
+      this.notifyUser(`Cuadre de caja aplicado. El total de ${monthLabel} y el balance total deberían quedar en $ 0.00 al refrescar datos.`);
+    });
+  }
+
+  /** Ejecuta en secuencia los ajustes de cuadre para asegurar consistencia. */
+  private executeReconciliationAdjustments(adjustments: CreateTransactionDto[], onDone: () => void): void {
+    const runAt = (index: number): void => {
+      if (index >= adjustments.length) {
+        onDone();
+        return;
+      }
+
+      const dto = adjustments[index];
+      console.log('[DashboardComponent] onReconcileCash() creando ajuste', dto);
+      this.createTransactionUseCase.execute(dto, () => runAt(index + 1));
     };
 
-    console.log('[DashboardComponent] onReconcileCash() creando ajuste', dto);
-    this.createTransactionUseCase.execute(dto, () => {
-      this.reloadAll();
-      this.notifyUser(`Cuadre de caja aplicado. El total de ${monthLabel} debería quedar en $ 0.00 al refrescar datos.`);
-    });
+    runAt(0);
   }
 
   /**
@@ -505,6 +540,13 @@ export class DashboardComponent implements OnInit {
     }
 
     return new Date(year, month + 1, 0);
+  }
+
+  /** Fecha fuera del mes seleccionado para ajustar balance global sin afectar ese mes. */
+  private getOutOfMonthReconciliationDate(): Date {
+    const year = this.selectedYear();
+    const month = this.selectedMonth();
+    return new Date(year, month, 0);
   }
 
   /** Solicita confirmación al usuario; si no existe API modal, permite continuar. */
