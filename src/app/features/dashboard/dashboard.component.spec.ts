@@ -20,11 +20,25 @@ describe('DashboardComponent', () => {
   let createUseCase: any;
   let updateUseCase: any;
   let deleteUseCase: any;
+  let confirmMock: any;
+  let alertMock: any;
 
   beforeEach(async () => {
     Object.defineProperty(globalThis, 'localStorage', {
       value: { getItem: () => null, setItem: () => {}, removeItem: () => {}, clear: () => {} },
       writable: true, configurable: true,
+    });
+    confirmMock = vi.fn(() => true);
+    alertMock = vi.fn();
+    Object.defineProperty(globalThis, 'confirm', {
+      value: confirmMock,
+      writable: true,
+      configurable: true,
+    });
+    Object.defineProperty(globalThis, 'alert', {
+      value: alertMock,
+      writable: true,
+      configurable: true,
     });
     listUseCase = { execute: vi.fn(), loadAll: vi.fn() };
     getSummaryUseCase = { execute: vi.fn() };
@@ -218,6 +232,85 @@ describe('DashboardComponent', () => {
   describe('getCategoryIcon', () => {
     it('should return emoji for known category', () => {
       expect(component.getCategoryIcon('food')).toBe('🍽️');
+    });
+  });
+
+  describe('cash reconciliation', () => {
+    it('should create expense adjustment when balance is positive', () => {
+      const txState = TestBed.inject(TransactionStateService);
+      txState.setSummary({
+        totalBalance: 1200,
+        monthlyIncome: 0,
+        monthlyExpenses: 0,
+        monthlySavings: 0,
+        savingsGoal: 3000,
+      });
+
+      component.onReconcileCash();
+
+      expect(confirmMock).toHaveBeenCalled();
+      expect(createUseCase.execute).toHaveBeenCalledWith(
+        expect.objectContaining({
+          description: 'Cuadre de caja (ajuste automático)',
+          amount: 1200,
+          type: 'expense',
+          category: 'other',
+        }),
+        expect.any(Function),
+      );
+    });
+
+    it('should create income adjustment when balance is negative', () => {
+      const txState = TestBed.inject(TransactionStateService);
+      txState.setSummary({
+        totalBalance: -540,
+        monthlyIncome: 0,
+        monthlyExpenses: 0,
+        monthlySavings: 0,
+        savingsGoal: 3000,
+      });
+
+      component.onReconcileCash();
+
+      expect(createUseCase.execute).toHaveBeenCalledWith(
+        expect.objectContaining({
+          amount: 540,
+          type: 'income',
+        }),
+        expect.any(Function),
+      );
+    });
+
+    it('should not create adjustment when user cancels confirmation', () => {
+      const txState = TestBed.inject(TransactionStateService);
+      txState.setSummary({
+        totalBalance: 100,
+        monthlyIncome: 0,
+        monthlyExpenses: 0,
+        monthlySavings: 0,
+        savingsGoal: 3000,
+      });
+      confirmMock.mockReturnValue(false);
+
+      component.onReconcileCash();
+
+      expect(createUseCase.execute).not.toHaveBeenCalled();
+    });
+
+    it('should show alert and skip when balance is already zero', () => {
+      const txState = TestBed.inject(TransactionStateService);
+      txState.setSummary({
+        totalBalance: 0,
+        monthlyIncome: 0,
+        monthlyExpenses: 0,
+        monthlySavings: 0,
+        savingsGoal: 3000,
+      });
+
+      component.onReconcileCash();
+
+      expect(alertMock).toHaveBeenCalled();
+      expect(createUseCase.execute).not.toHaveBeenCalled();
     });
   });
 });

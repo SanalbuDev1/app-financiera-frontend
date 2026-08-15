@@ -364,7 +364,7 @@ El tema se controla con la clase `.dark` en `.dashboard-shell`. Todas las pantal
 ├── .dashboard (flex: 1, scroll principal)
 │   ├── .topbar (sticky, hamburguesa + saludo + logout móvil)
 │   ├── .month-selector (botones Enero–mes actual, recarga summary + donut + categorías)
-│   ├── .summary-cards (grid auto-fit: balance, ingresos, gastos, ahorro)
+│   ├── .summary-cards (grid auto-fit: balance con botón "Cuadrar caja", ingresos, gastos, ahorro)
 │   ├── .mid-row (grid: gráfico barras 6 meses + donut chart gastos por categoría)
 │   ├── .bottom-row (grid: transacciones paginadas + gastos por categoría)
 │   └── .fab (botón flotante "+" abajo-derecha)

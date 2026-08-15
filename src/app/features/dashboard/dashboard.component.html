@@ -99,11 +99,22 @@
     <!-- CARDS RESUMEN -->
     <section class="summary-cards">
       <div class="card card--balance">
-        <span class="card__icon">💎</span>
-        <div class="card__content">
-          <span class="card__label">Balance total</span>
-          <span class="card__value card__value--large">$ {{ summary().totalBalance | number:'1.2-2' }}</span>
+        <div class="card__balance-main">
+          <span class="card__icon">💎</span>
+          <div class="card__content">
+            <span class="card__label">Balance total</span>
+            <span class="card__value card__value--large">$ {{ summary().totalBalance | number:'1.2-2' }}</span>
+          </div>
         </div>
+        <button
+          class="card__balance-action"
+          type="button"
+          [disabled]="loading()"
+          (click)="onReconcileCash()"
+          title="Crear ajuste automático para dejar el balance total en cero"
+          aria-label="Cuadrar caja">
+          Cuadrar caja
+        </button>
       </div>
       <div class="card card--month-total">
         <span class="card__icon">🧮</span>

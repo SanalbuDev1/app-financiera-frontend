@@ -192,6 +192,10 @@ export class DashboardComponent implements OnInit {
   /** Indica si se están cargando datos */
   readonly loading = this.transactionState.loading;
 
+  /** Referencia segura a funciones del navegador para compatibilidad en tests SSR/node. */
+  private readonly browserConfirm = (globalThis as { confirm?: (message?: string) => boolean }).confirm;
+  private readonly browserAlert = (globalThis as { alert?: (message?: string) => void }).alert;
+
   /** Navegar a una página */
   goToPage(page: number): void {
     if (page >= 1 && page <= this.txTotalPages()) {
@@ -443,6 +447,59 @@ export class DashboardComponent implements OnInit {
     this.deleteTransactionUseCase.execute(id, () => {
       this.reloadAll();
     });
+  }
+
+  /**
+   * Genera una transacción automática para dejar el balance total en cero.
+   * Si el balance es positivo crea un gasto; si es negativo crea un ingreso.
+   */
+  onReconcileCash(): void {
+    if (this.loading()) {
+      console.warn('[DashboardComponent] onReconcileCash() abortado: loading=true');
+      return;
+    }
+
+    const currentBalance = this.summary().totalBalance;
+    const amount = Number(Math.abs(currentBalance).toFixed(2));
+
+    if (amount === 0) {
+      this.browserAlert?.('El balance ya está en cero. No se necesita cuadre de caja.');
+      return;
+    }
+
+    const type = currentBalance > 0 ? 'expense' : 'income';
+    const actionLabel = currentBalance > 0 ? 'gasto' : 'ingreso';
+    const confirmed = this.browserConfirm?.(
+      `Se creará un ${actionLabel} de ajuste por $ ${amount.toLocaleString('es-CO', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} para dejar el balance total en $ 0.00. ¿Deseas continuar?`,
+    );
+
+    if (!confirmed) {
+      console.log('[DashboardComponent] onReconcileCash() cancelado por usuario');
+      return;
+    }
+
+    const dto: CreateTransactionDto = {
+      description: 'Cuadre de caja (ajuste automático)',
+      amount,
+      category: 'other',
+      type,
+      transactionDate: this.toIsoDate(new Date()),
+      notes: `Ajuste automático desde dashboard. Balance previo: ${currentBalance.toFixed(2)}. Balance objetivo: 0.00.`,
+    };
+
+    console.log('[DashboardComponent] onReconcileCash() creando ajuste', dto);
+    this.createTransactionUseCase.execute(dto, () => {
+      this.reloadAll();
+      this.browserAlert?.('Cuadre de caja aplicado correctamente.');
+    });
+  }
+
+  /** Retorna una fecha en formato YYYY-MM-DD para requests del backend. */
+  private toIsoDate(date: Date): string {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
   }
 }
 
