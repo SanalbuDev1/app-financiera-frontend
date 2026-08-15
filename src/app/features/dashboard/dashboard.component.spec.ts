@@ -236,11 +236,11 @@ describe('DashboardComponent', () => {
   });
 
   describe('cash reconciliation', () => {
-    it('should create expense adjustment when balance is positive', () => {
+    it('should create expense adjustment when monthly total is positive', () => {
       const txState = TestBed.inject(TransactionStateService);
       txState.setSummary({
-        totalBalance: 1200,
-        monthlyIncome: 0,
+        totalBalance: 0,
+        monthlyIncome: 1200,
         monthlyExpenses: 0,
         monthlySavings: 0,
         savingsGoal: 3000,
@@ -260,12 +260,12 @@ describe('DashboardComponent', () => {
       );
     });
 
-    it('should create income adjustment when balance is negative', () => {
+    it('should create income adjustment when monthly total is negative', () => {
       const txState = TestBed.inject(TransactionStateService);
       txState.setSummary({
-        totalBalance: -540,
+        totalBalance: 0,
         monthlyIncome: 0,
-        monthlyExpenses: 0,
+        monthlyExpenses: 540,
         monthlySavings: 0,
         savingsGoal: 3000,
       });
@@ -284,8 +284,8 @@ describe('DashboardComponent', () => {
     it('should not create adjustment when user cancels confirmation', () => {
       const txState = TestBed.inject(TransactionStateService);
       txState.setSummary({
-        totalBalance: 100,
-        monthlyIncome: 0,
+        totalBalance: 0,
+        monthlyIncome: 100,
         monthlyExpenses: 0,
         monthlySavings: 0,
         savingsGoal: 3000,
@@ -297,10 +297,10 @@ describe('DashboardComponent', () => {
       expect(createUseCase.execute).not.toHaveBeenCalled();
     });
 
-    it('should show alert and skip when balance is already zero', () => {
+    it('should show alert and skip when monthly total is already zero', () => {
       const txState = TestBed.inject(TransactionStateService);
       txState.setSummary({
-        totalBalance: 0,
+        totalBalance: 250,
         monthlyIncome: 0,
         monthlyExpenses: 0,
         monthlySavings: 0,
@@ -316,8 +316,8 @@ describe('DashboardComponent', () => {
     it('should continue reconciliation when confirm is unavailable', () => {
       const txState = TestBed.inject(TransactionStateService);
       txState.setSummary({
-        totalBalance: 250,
-        monthlyIncome: 0,
+        totalBalance: 0,
+        monthlyIncome: 250,
         monthlyExpenses: 0,
         monthlySavings: 0,
         savingsGoal: 3000,

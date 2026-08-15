@@ -446,8 +446,8 @@ export class DashboardComponent implements OnInit {
   }
 
   /**
-   * Genera una transacción automática para dejar el balance total en cero.
-   * Si el balance es positivo crea un gasto; si es negativo crea un ingreso.
+   * Genera una transacción automática para dejar en cero el total del mes seleccionado.
+   * Si el total mensual es positivo crea un gasto; si es negativo crea un ingreso.
    */
   onReconcileCash(): void {
     if (this.loading()) {
@@ -455,17 +455,18 @@ export class DashboardComponent implements OnInit {
       return;
     }
 
-    const currentBalance = this.summary().totalBalance;
-    const amount = Number(Math.abs(currentBalance).toFixed(2));
+    const monthNet = this.monthlyTotal();
+    const amount = Number(Math.abs(monthNet).toFixed(2));
 
     if (amount === 0) {
-      this.notifyUser('El balance ya está en cero. No se necesita cuadre de caja.');
+      this.notifyUser('El total del mes ya está en cero. No se necesita cuadre de caja.');
       return;
     }
 
-    const type = currentBalance > 0 ? 'expense' : 'income';
-    const actionLabel = currentBalance > 0 ? 'gasto' : 'ingreso';
-    const confirmationMessage = `Se creará un ${actionLabel} de ajuste por $ ${amount.toLocaleString('es-CO', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} para dejar el balance total en $ 0.00. ¿Deseas continuar?`;
+    const type = monthNet > 0 ? 'expense' : 'income';
+    const actionLabel = monthNet > 0 ? 'gasto' : 'ingreso';
+    const monthLabel = this.MONTH_FULL[this.selectedMonth()];
+    const confirmationMessage = `Se creará un ${actionLabel} de ajuste por $ ${amount.toLocaleString('es-CO', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} para dejar el total de ${monthLabel} en $ 0.00. ¿Deseas continuar?`;
     const confirmed = this.askForConfirmation(confirmationMessage);
 
     if (!confirmed) {
@@ -478,15 +479,32 @@ export class DashboardComponent implements OnInit {
       amount,
       category: 'other',
       type,
-      transactionDate: this.toIsoDate(new Date()),
-      notes: `Ajuste automático desde dashboard. Balance previo: ${currentBalance.toFixed(2)}. Balance objetivo: 0.00.`,
+      transactionDate: this.toIsoDate(this.getReconciliationDateForSelectedMonth()),
+      notes: `Ajuste automático desde dashboard. Total mensual previo: ${monthNet.toFixed(2)}. Total mensual objetivo: 0.00.`,
     };
 
     console.log('[DashboardComponent] onReconcileCash() creando ajuste', dto);
     this.createTransactionUseCase.execute(dto, () => {
       this.reloadAll();
-      this.notifyUser('Cuadre de caja aplicado correctamente.');
+      this.notifyUser(`Cuadre de caja aplicado. El total de ${monthLabel} debería quedar en $ 0.00 al refrescar datos.`);
     });
+  }
+
+  /**
+   * Fecha de ajuste para el mes seleccionado.
+   * Si es el mes actual usa hoy; si no, usa el último día de ese mes.
+   */
+  private getReconciliationDateForSelectedMonth(): Date {
+    const now = new Date();
+    const year = this.selectedYear();
+    const month = this.selectedMonth();
+    const isCurrentMonth = now.getFullYear() === year && now.getMonth() === month;
+
+    if (isCurrentMonth) {
+      return now;
+    }
+
+    return new Date(year, month + 1, 0);
   }
 
   /** Solicita confirmación al usuario; si no existe API modal, permite continuar. */
