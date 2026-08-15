@@ -312,5 +312,31 @@ describe('DashboardComponent', () => {
       expect(alertMock).toHaveBeenCalled();
       expect(createUseCase.execute).not.toHaveBeenCalled();
     });
+
+    it('should continue reconciliation when confirm is unavailable', () => {
+      const txState = TestBed.inject(TransactionStateService);
+      txState.setSummary({
+        totalBalance: 250,
+        monthlyIncome: 0,
+        monthlyExpenses: 0,
+        monthlySavings: 0,
+        savingsGoal: 3000,
+      });
+      Object.defineProperty(globalThis, 'confirm', {
+        value: undefined,
+        writable: true,
+        configurable: true,
+      });
+
+      component.onReconcileCash();
+
+      expect(createUseCase.execute).toHaveBeenCalledWith(
+        expect.objectContaining({
+          amount: 250,
+          type: 'expense',
+        }),
+        expect.any(Function),
+      );
+    });
   });
 });

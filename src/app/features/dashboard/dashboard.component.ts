@@ -192,10 +192,6 @@ export class DashboardComponent implements OnInit {
   /** Indica si se están cargando datos */
   readonly loading = this.transactionState.loading;
 
-  /** Referencia segura a funciones del navegador para compatibilidad en tests SSR/node. */
-  private readonly browserConfirm = (globalThis as { confirm?: (message?: string) => boolean }).confirm;
-  private readonly browserAlert = (globalThis as { alert?: (message?: string) => void }).alert;
-
   /** Navegar a una página */
   goToPage(page: number): void {
     if (page >= 1 && page <= this.txTotalPages()) {
@@ -463,15 +459,14 @@ export class DashboardComponent implements OnInit {
     const amount = Number(Math.abs(currentBalance).toFixed(2));
 
     if (amount === 0) {
-      this.browserAlert?.('El balance ya está en cero. No se necesita cuadre de caja.');
+      this.notifyUser('El balance ya está en cero. No se necesita cuadre de caja.');
       return;
     }
 
     const type = currentBalance > 0 ? 'expense' : 'income';
     const actionLabel = currentBalance > 0 ? 'gasto' : 'ingreso';
-    const confirmed = this.browserConfirm?.(
-      `Se creará un ${actionLabel} de ajuste por $ ${amount.toLocaleString('es-CO', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} para dejar el balance total en $ 0.00. ¿Deseas continuar?`,
-    );
+    const confirmationMessage = `Se creará un ${actionLabel} de ajuste por $ ${amount.toLocaleString('es-CO', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} para dejar el balance total en $ 0.00. ¿Deseas continuar?`;
+    const confirmed = this.askForConfirmation(confirmationMessage);
 
     if (!confirmed) {
       console.log('[DashboardComponent] onReconcileCash() cancelado por usuario');
@@ -490,8 +485,35 @@ export class DashboardComponent implements OnInit {
     console.log('[DashboardComponent] onReconcileCash() creando ajuste', dto);
     this.createTransactionUseCase.execute(dto, () => {
       this.reloadAll();
-      this.browserAlert?.('Cuadre de caja aplicado correctamente.');
+      this.notifyUser('Cuadre de caja aplicado correctamente.');
     });
+  }
+
+  /** Solicita confirmación al usuario; si no existe API modal, permite continuar. */
+  private askForConfirmation(message: string): boolean {
+    const confirmFn = (globalThis as { confirm?: (text?: string) => boolean }).confirm;
+    if (typeof confirmFn !== 'function') {
+      console.warn('[DashboardComponent] confirm() no disponible; continuando sin modal');
+      return true;
+    }
+
+    try {
+      return confirmFn(message);
+    } catch (error) {
+      console.warn('[DashboardComponent] confirm() bloqueado por el entorno', error);
+      return true;
+    }
+  }
+
+  /** Muestra notificación al usuario si alert está disponible; siempre deja traza en consola. */
+  private notifyUser(message: string): void {
+    const alertFn = (globalThis as { alert?: (text?: string) => void }).alert;
+    if (typeof alertFn === 'function') {
+      alertFn(message);
+      return;
+    }
+
+    console.log('[DashboardComponent] notifyUser()', message);
   }
 
   /** Retorna una fecha en formato YYYY-MM-DD para requests del backend. */
